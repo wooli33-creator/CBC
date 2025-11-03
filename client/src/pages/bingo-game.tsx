@@ -113,6 +113,10 @@ function generateNewSeed(): string {
   return seed;
 }
 
+// 빙고 성공에 필요한 줄 수 (기본값: 3줄)
+// 이 값을 변경하면 성공 조건을 쉽게 조정할 수 있습니다
+const REQUIRED_LINES = 3;
+
 export default function BingoGame() {
   const [level, setLevel] = useState<number>(1);
   const [gridData, setGridData] = useState<KeywordData[]>([]);
@@ -124,6 +128,8 @@ export default function BingoGame() {
   const [currentSeed, setCurrentSeed] = useState<string>('');
   const [levelCompleteModalOpen, setLevelCompleteModalOpen] = useState(false);
   const [allLevelsComplete, setAllLevelsComplete] = useState(false);
+  // 현재 완성된 줄의 개수 (진행도 표시용)
+  const [completedLinesCount, setCompletedLinesCount] = useState<number>(0);
   
   const gridSize: GridSize = (level + 2) as GridSize;
 
@@ -152,41 +158,55 @@ export default function BingoGame() {
     setSelectedTiles(new Set());
     setHasBingo(false);
     setWinningLines([]);
+    // 진행도 초기화
+    setCompletedLinesCount(0);
   };
 
-  const checkBingo = (selected: Set<number>, size: GridSize): boolean => {
+  /**
+   * 완성된 빙고 줄을 계산하는 함수
+   * @param selected 선택된 타일의 인덱스 Set
+   * @param size 그리드 크기 (3x3, 4x4 등)
+   * @returns 완성된 줄들의 배열 (행/열/대각선 포함, 중복 없음)
+   */
+  const getCompletedLines = (selected: Set<number>, size: GridSize): number[][] => {
     const lines: number[][] = [];
     
+    // 모든 행 검사
     for (let i = 0; i < size; i++) {
       const row = Array.from({ length: size }, (_, j) => i * size + j);
       if (row.every(idx => selected.has(idx))) {
         lines.push(row);
       }
-      
+    }
+    
+    // 모든 열 검사
+    for (let i = 0; i < size; i++) {
       const col = Array.from({ length: size }, (_, j) => j * size + i);
       if (col.every(idx => selected.has(idx))) {
         lines.push(col);
       }
     }
     
+    // 왼쪽 위 → 오른쪽 아래 대각선
     const diagonal1 = Array.from({ length: size }, (_, i) => i * size + i);
     if (diagonal1.every(idx => selected.has(idx))) {
       lines.push(diagonal1);
     }
     
+    // 오른쪽 위 → 왼쪽 아래 대각선
     const diagonal2 = Array.from({ length: size }, (_, i) => i * size + (size - 1 - i));
     if (diagonal2.every(idx => selected.has(idx))) {
       lines.push(diagonal2);
     }
 
-    if (lines.length > 0) {
-      setWinningLines(lines);
-      return true;
-    }
-    
-    return false;
+    return lines;
   };
 
+  /**
+   * 타일 클릭 핸들러
+   * 타일을 선택하고, 완성된 줄 수를 계산하여 진행도를 업데이트합니다.
+   * REQUIRED_LINES 이상 완성하면 레벨 완료 처리됩니다.
+   */
   const handleTileClick = (index: number, data: KeywordData) => {
     if (selectedTiles.has(index) || allLevelsComplete) return;
     
@@ -197,8 +217,16 @@ export default function BingoGame() {
     setCurrentTile(data);
     setModalOpen(true);
     
-    const bingo = checkBingo(newSelected, gridSize);
-    if (bingo && !hasBingo) {
+    // 완성된 줄들을 계산 (중복 없이)
+    const completedLines = getCompletedLines(newSelected, gridSize);
+    const linesCount = completedLines.length;
+    
+    // 진행도 업데이트
+    setCompletedLinesCount(linesCount);
+    setWinningLines(completedLines);
+    
+    // REQUIRED_LINES 이상 완성했을 때만 레벨 완료 처리
+    if (linesCount >= REQUIRED_LINES && !hasBingo) {
       setHasBingo(true);
       setTimeout(() => {
         setModalOpen(false);
@@ -292,7 +320,7 @@ export default function BingoGame() {
           <div className="mb-6">
             <div className="bg-card/90 backdrop-blur-sm p-4 rounded-lg border border-card-border shadow-md">
               <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div>
+                <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <Badge variant="default" className="text-base font-bold px-3 py-1">
                       {getLevelName(level)}
@@ -301,9 +329,21 @@ export default function BingoGame() {
                       {gridSize}×{gridSize} 그리드
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    {level === 1 ? '연습 단계로 시작합니다' : `레벨 ${level}/5 진행 중`}
-                  </p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {level === 1 ? '연습 단계로 시작합니다' : `레벨 ${level}/5 진행 중`}
+                    </p>
+                    {/* 빙고 진행도 표시: 완성된 줄 수 / 필요한 줄 수 */}
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={completedLinesCount >= REQUIRED_LINES ? "default" : "secondary"}
+                        className="text-sm font-bold px-2 py-0.5"
+                        data-testid="progress-badge"
+                      >
+                        진행도: {completedLinesCount} / {REQUIRED_LINES}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map(lv => (

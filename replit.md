@@ -2,9 +2,9 @@
 
 ## Overview
 
-A playful educational bingo game designed for elementary students to learn about climate change and environmental topics. The application presents a 5x5 bingo grid filled with climate-related Korean keywords (like "탄소중립", "재활용", "태양에너지"). When users click on tiles, they can read educational descriptions about each climate topic. The game celebrates victory moments when players complete a bingo pattern.
+A progressive educational bingo game designed for adult learners to master climate change knowledge through an escalating challenge system. Players start with a 3×3 practice grid and progress through five levels (3×3, 4×4, 5×5, 6×6, 7×7), earning badges and titles as they advance. The final achievement—"지구 지킴이 등단" (Earth Guardian Certification)—is awarded upon completing all levels.
 
-The application is built as a single-page educational game with a warm, approachable aesthetic that encourages interaction and learning without feeling like a test.
+The application features a level-based progression system where completing each bingo automatically advances players to the next grid size. Each level displays educational climate-related Korean keywords with detailed descriptions, combining gamification with environmental education. The game uses seed-based randomization to ensure unique boards per session while maintaining consistency on refresh.
 
 ## User Preferences
 

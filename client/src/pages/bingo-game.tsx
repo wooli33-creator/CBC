@@ -114,7 +114,7 @@ function generateNewSeed(): string {
 }
 
 export default function BingoGame() {
-  const [gridSize, setGridSize] = useState<GridSize>(5);
+  const [level, setLevel] = useState<number>(1);
   const [gridData, setGridData] = useState<KeywordData[]>([]);
   const [selectedTiles, setSelectedTiles] = useState<Set<number>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
@@ -122,6 +122,10 @@ export default function BingoGame() {
   const [hasBingo, setHasBingo] = useState(false);
   const [winningLines, setWinningLines] = useState<number[][]>([]);
   const [currentSeed, setCurrentSeed] = useState<string>('');
+  const [levelCompleteModalOpen, setLevelCompleteModalOpen] = useState(false);
+  const [allLevelsComplete, setAllLevelsComplete] = useState(false);
+  
+  const gridSize: GridSize = (level + 2) as GridSize;
 
   useEffect(() => {
     const seed = getSessionSeed();
@@ -184,7 +188,7 @@ export default function BingoGame() {
   };
 
   const handleTileClick = (index: number, data: KeywordData) => {
-    if (selectedTiles.has(index)) return;
+    if (selectedTiles.has(index) || allLevelsComplete) return;
     
     const newSelected = new Set(selectedTiles);
     newSelected.add(index);
@@ -196,26 +200,56 @@ export default function BingoGame() {
     const bingo = checkBingo(newSelected, gridSize);
     if (bingo && !hasBingo) {
       setHasBingo(true);
+      setTimeout(() => {
+        setModalOpen(false);
+        setLevelCompleteModalOpen(true);
+      }, 800);
     }
+  };
+
+  const handleNextLevel = () => {
+    setLevelCompleteModalOpen(false);
+    
+    if (level >= 5) {
+      setAllLevelsComplete(true);
+      return;
+    }
+    
+    setLevel(level + 1);
+    setHasBingo(false);
   };
 
   const handleReset = () => {
-    if (confirm('새로운 시드로 빙고를 다시 시작하시겠습니까?')) {
+    if (confirm('처음부터 다시 시작하시겠습니까?')) {
       const newSeed = generateNewSeed();
       setCurrentSeed(newSeed);
-      initializeGame(gridSize, newSeed);
+      setLevel(1);
+      setHasBingo(false);
+      setAllLevelsComplete(false);
+      setLevelCompleteModalOpen(false);
+      initializeGame(3, newSeed);
     }
-  };
-
-  const handleGridSizeChange = (size: GridSize) => {
-    setGridSize(size);
   };
 
   const isWinningTile = (index: number): boolean => {
     return winningLines.some(line => line.includes(index));
   };
 
-  const gridSizeOptions: GridSize[] = [3, 4, 5, 6, 7];
+  const getLevelName = (lv: number): string => {
+    const names = ['연습 단계', '초급 지킴이', '중급 지킴이', '상급 지킴이', '마스터 지킴이'];
+    return names[lv - 1] || '';
+  };
+
+  const getLevelCompleteMessage = (lv: number): { title: string; message: string } => {
+    const messages = [
+      { title: '연습 완료! 🌱', message: '기본기를 익혔습니다. 이제 본격적인 도전을 시작해볼까요?' },
+      { title: '초급 달성! 🌿', message: '훌륭합니다! 기후 지식이 자라나고 있어요.' },
+      { title: '중급 달성! 🌳', message: '대단해요! 이제 진정한 기후 지킴이의 모습이 보입니다.' },
+      { title: '상급 달성! 🌲', message: '놀라워요! 거의 전문가 수준이에요. 마지막 도전만 남았습니다!' },
+      { title: '지구 지킴이 등단! 🏆🌍', message: '축하합니다! 모든 단계를 완료하셨습니다. 당신은 이제 진정한 지구 지킴이입니다!' }
+    ];
+    return messages[lv - 1] || messages[0];
+  };
   
   const getTileSize = () => {
     switch(gridSize) {
@@ -236,43 +270,71 @@ export default function BingoGame() {
             <span>기후 위기 빙고 챌린지 🌏</span>
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base mt-2">
-            그리드 크기를 선택하고 칸을 클릭해서 기후 지식을 배워보세요!
+            3×3부터 7×7까지 모든 빙고를 완성하여 지구 지킴이 등단에 도전하세요!
           </p>
         </header>
 
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-6" role="group" aria-label="그리드 크기 선택">
-          {gridSizeOptions.map(size => (
-            <Button
-              key={size}
-              onClick={() => handleGridSizeChange(size)}
-              variant={gridSize === size ? 'default' : 'outline'}
-              size="default"
-              className="relative font-bold"
-              data-testid={`button-grid-${size}`}
-              aria-label={`${size}x${size} 그리드 선택`}
-              aria-pressed={gridSize === size}
-            >
-              {size}×{size}
-              {size === 3 && (
-                <Badge 
-                  variant="secondary" 
-                  className="ml-2 text-xs font-bold"
-                >
-                  연습
-                </Badge>
-              )}
-            </Button>
-          ))}
-        </div>
+        {allLevelsComplete ? (
+          <div 
+            className="bg-gradient-to-r from-primary via-accent to-secondary p-6 sm:p-8 rounded-xl shadow-2xl mb-6 animate-in zoom-in duration-700"
+            data-testid="all-complete-banner"
+          >
+            <div className="flex flex-col items-center justify-center gap-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center">
+                🏆 지구 지킴이 등단 🌍
+              </h2>
+              <p className="text-lg sm:text-xl text-white/90 text-center">
+                모든 단계를 완료하셨습니다!<br />당신은 진정한 기후 영웅입니다!
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6">
+            <div className="bg-card/90 backdrop-blur-sm p-4 rounded-lg border border-card-border shadow-md">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="default" className="text-base font-bold px-3 py-1">
+                      {getLevelName(level)}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {gridSize}×{gridSize} 그리드
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {level === 1 ? '연습 단계로 시작합니다' : `레벨 ${level}/5 진행 중`}
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map(lv => (
+                    <div
+                      key={lv}
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm border-2 ${
+                        lv < level
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : lv === level
+                          ? 'bg-accent text-accent-foreground border-accent animate-pulse'
+                          : 'bg-muted text-muted-foreground border-muted'
+                      }`}
+                      data-testid={`level-indicator-${lv}`}
+                    >
+                      {lv < level ? '✓' : lv}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-        {hasBingo && (
+        {hasBingo && !allLevelsComplete && (
           <div 
             className="bg-gradient-to-r from-primary via-accent to-secondary p-4 sm:p-6 rounded-lg shadow-lg mb-6 animate-in slide-in-from-top duration-500"
             data-testid="victory-banner"
           >
             <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center">
-                축하합니다! 당신은 기후 지킴이입니다! 🌍
+                빙고 완성! 🌍
               </h2>
             </div>
           </div>
@@ -332,10 +394,10 @@ export default function BingoGame() {
               variant="secondary"
               className="gap-2 text-base sm:text-lg font-bold shadow-md"
               data-testid="button-reset"
-              aria-label="새로운 빙고판 시작"
+              aria-label="처음부터 다시 시작"
             >
               <RotateCcw className="w-5 h-5" />
-              새로운 빙고 시작하기
+              처음부터 다시 시작
             </Button>
           </div>
         </div>
@@ -376,6 +438,52 @@ export default function BingoGame() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={levelCompleteModalOpen} onOpenChange={setLevelCompleteModalOpen}>
+        <DialogContent 
+          className="sm:max-w-lg bg-gradient-to-br from-primary/10 via-accent/10 to-secondary/10 border-2 border-primary/30"
+          data-testid="modal-level-complete"
+        >
+          {(() => {
+            const msg = getLevelCompleteMessage(level);
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-3xl font-bold text-primary text-center">
+                    {msg.title}
+                  </DialogTitle>
+                </DialogHeader>
+                <DialogDescription className="text-lg leading-relaxed text-foreground pt-4 text-center">
+                  {msg.message}
+                </DialogDescription>
+                <div className="flex justify-center pt-6 gap-3">
+                  {level < 5 ? (
+                    <Button
+                      onClick={handleNextLevel}
+                      variant="default"
+                      size="lg"
+                      className="font-bold text-lg px-8"
+                      data-testid="button-next-level"
+                    >
+                      다음 단계로 🚀
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleNextLevel}
+                      variant="default"
+                      size="lg"
+                      className="font-bold text-lg px-8"
+                      data-testid="button-complete-all"
+                    >
+                      완료! 🏆
+                    </Button>
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

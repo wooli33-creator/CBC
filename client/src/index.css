@@ -76,8 +76,8 @@
   --chart-4: 35 80% 55%;
   --chart-5: 280 65% 50%;
 
-  --font-sans: 'Noto Sans KR', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif: 'Noto Sans KR', Georgia, serif;
+  --font-sans: 'Jua', 'Gamja Flower', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'Jua', Georgia, serif;
   --font-mono: Menlo, monospace;
   --radius: .75rem; /* 12px */
   --shadow-2xs: 0px 1px 2px 0px hsl(210 10% 40% / 0.05);

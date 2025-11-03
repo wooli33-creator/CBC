@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Check, RotateCcw, Sparkles, Globe, Leaf } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 interface KeywordData {
   keyword: string;
@@ -129,8 +129,7 @@ export default function BingoGame() {
       <div className="w-full max-w-3xl mx-auto">
         <header className="text-center mb-6 sm:mb-8">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-2 tracking-tight flex items-center justify-center gap-3 flex-wrap">
-            <Globe className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 text-primary" />
-            <span>기후 위기 빙고 챌린지</span>
+            <span>기후 위기 빙고 챌린지 🌏</span>
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base mt-2">
             칸을 클릭해서 기후 지식을 배워보세요!
@@ -143,11 +142,9 @@ export default function BingoGame() {
             data-testid="victory-banner"
           >
             <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-              <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-white animate-pulse" />
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center">
-                축하합니다! 당신은 기후 지킴이입니다!
+                축하합니다! 당신은 기후 지킴이입니다! 🌍
               </h2>
-              <Globe className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
           </div>
         )}
@@ -168,15 +165,15 @@ export default function BingoGame() {
                   disabled={isSelected}
                   data-testid={`tile-${index}`}
                   className={`
-                    relative aspect-square rounded-md sm:rounded-lg p-1.5 sm:p-2 md:p-3
+                    relative aspect-square rounded-xl sm:rounded-2xl p-1.5 sm:p-2 md:p-3
                     flex items-center justify-center text-center
-                    text-[0.65rem] sm:text-xs md:text-sm font-medium leading-tight
+                    text-[0.65rem] sm:text-xs md:text-sm font-bold leading-tight
                     transition-all duration-200 border-2
                     ${isSelected 
                       ? isWinning
                         ? 'bg-gradient-to-br from-primary via-accent to-secondary text-white border-primary shadow-lg scale-105'
                         : 'bg-primary text-primary-foreground border-primary shadow-md'
-                      : 'bg-card text-card-foreground border-card-border hover-elevate active-elevate-2 hover:scale-105 hover:shadow-md cursor-pointer'
+                      : 'bg-card text-card-foreground border-card-border hover-elevate active-elevate-2 hover:scale-110 hover:shadow-lg cursor-pointer'
                     }
                     ${isSelected ? 'cursor-default' : ''}
                   `}
@@ -186,10 +183,7 @@ export default function BingoGame() {
                   </span>
                   {isSelected && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Check 
-                        className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-white/90"
-                        strokeWidth={3}
-                      />
+                      <span className="text-2xl sm:text-3xl md:text-4xl">🌱</span>
                     </div>
                   )}
                 </button>
@@ -213,9 +207,7 @@ export default function BingoGame() {
 
         <footer className="text-center mt-6 sm:mt-8">
           <p className="text-base sm:text-lg md:text-xl font-medium text-primary flex items-center justify-center gap-2 flex-wrap">
-            <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-            <span>지구를 지키는 작은 실천을 시작해요</span>
-            <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+            <span>지구를 지키는 작은 실천을 시작해요 🌱</span>
           </p>
         </footer>
       </div>
@@ -229,7 +221,7 @@ export default function BingoGame() {
             <>
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-primary" />
+                  <span className="text-2xl">🌱</span>
                   {currentTile.keyword}
                 </DialogTitle>
               </DialogHeader>
@@ -241,7 +233,7 @@ export default function BingoGame() {
                   onClick={() => setModalOpen(false)}
                   variant="default"
                   size="lg"
-                  className="font-semibold"
+                  className="font-bold"
                   data-testid="button-close-modal"
                 >
                   알겠어요!

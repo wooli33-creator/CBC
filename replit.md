@@ -2,9 +2,13 @@
 
 ## Overview
 
-A progressive educational bingo game designed for adult learners to master climate change knowledge through an escalating challenge system. Players start with a 3×3 practice grid and progress through five levels (3×3, 4×4, 5×5, 6×6, 7×7), earning badges and titles as they advance. The final achievement—"지구 지킴이 등단" (Earth Guardian Certification)—is awarded upon completing all levels.
+A progressive educational bingo game designed for adult learners to master climate change knowledge. The application now features **two distinct game modes**:
 
-The application features a level-based progression system where completing each bingo automatically advances players to the next grid size. Each level displays educational climate-related Korean keywords with detailed descriptions, combining gamification with environmental education. The game uses seed-based randomization to ensure unique boards per session while maintaining consistency on refresh.
+**Group Mode (모둠 모드)**: Original progression system where players advance through five levels (3×3, 4×4, 5×5, 6×6, 7×7), earning badges and titles. Each session generates a unique board using seed-based randomization. Completing 3 lines at each level advances to the next grid size. The final achievement—"지구 지킴이 등단" (Earth Guardian Certification)—is awarded upon completing all levels.
+
+**Solo Mode (혼자하기)**: Player vs Computer battle where both sides compete to complete 3 lines first. Players select grid size (3×3 to 7×7) and use a turn-based "Draw Word" system. A random word is drawn each turn, and if it exists on either board, it's automatically marked. First to complete 3 lines wins (player victory, computer victory, or draw for simultaneous completion).
+
+The game uses seed-based randomization to ensure unique boards per session while maintaining consistency on refresh. Each level displays educational climate-related Korean keywords with detailed descriptions, combining gamification with environmental education.
 
 ## User Preferences
 

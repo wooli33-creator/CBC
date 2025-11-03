@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { RotateCcw } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RotateCcw, Users, Bot } from 'lucide-react';
+
+// ============================================================
+// 타입 정의
+// ============================================================
 
 interface KeywordData {
   keyword: string;
@@ -10,7 +15,17 @@ interface KeywordData {
 }
 
 type GridSize = 3 | 4 | 5 | 6 | 7;
+type GameMode = 'group' | 'solo';
+type GameResult = 'player' | 'computer' | 'draw' | null;
 
+// ============================================================
+// 상수 정의
+// ============================================================
+
+// 빙고 성공에 필요한 줄 수 (기본값: 3줄)
+const REQUIRED_LINES = 3;
+
+// 연습용 키워드 (3×3)
 const PRACTICE_KEYWORDS: KeywordData[] = [
   { keyword: '도담도담 정원', description: '작은 텃밭이나 정원을 가꾸며 자연과 함께 하는 실천입니다. 직접 키운 채소를 먹으면 탄소 발자국을 줄일 수 있어요.' },
   { keyword: '기후미식', description: '지역에서 생산된 제철 식재료를 활용한 요리로, 운송 과정의 탄소 배출을 최소화하는 식문화입니다.' },
@@ -23,6 +38,7 @@ const PRACTICE_KEYWORDS: KeywordData[] = [
   { keyword: '계단 이용', description: '엘리베이터 대신 계단을 이용하면 전기도 아끼고 건강도 챙길 수 있어요.' },
 ];
 
+// 기후 키워드 (4×4 ~ 7×7)
 const CLIMATE_KEYWORDS: KeywordData[] = [
   { keyword: '탄소중립', description: '온실가스 배출량을 최대한 줄이고, 남은 배출량은 흡수하여 실질적인 배출량을 0으로 만드는 것입니다.' },
   { keyword: '재활용', description: '사용한 물건을 다시 활용하여 쓰레기를 줄이고 자원을 아끼는 방법입니다.' },
@@ -75,6 +91,15 @@ const CLIMATE_KEYWORDS: KeywordData[] = [
   { keyword: '기후 협약', description: '파리협정 등 국제사회가 기후 위기 대응을 위해 맺은 약속입니다.' },
 ];
 
+// ============================================================
+// 유틸리티 함수
+// ============================================================
+
+/**
+ * 시드 기반 난수 생성기
+ * @param seed 시드 문자열
+ * @returns 0과 1 사이의 난수를 반환하는 함수
+ */
 function seededRandom(seed: string): () => number {
   let value = 0;
   for (let i = 0; i < seed.length; i++) {
@@ -87,6 +112,12 @@ function seededRandom(seed: string): () => number {
   };
 }
 
+/**
+ * 시드 기반 배열 셔플
+ * @param array 원본 배열
+ * @param seed 시드 문자열
+ * @returns 셔플된 새 배열
+ */
 function seededShuffle<T>(array: T[], seed: string): T[] {
   const newArray = [...array];
   const random = seededRandom(seed);
@@ -98,134 +129,180 @@ function seededShuffle<T>(array: T[], seed: string): T[] {
   return newArray;
 }
 
-function getSessionSeed(): string {
-  let seed = sessionStorage.getItem('bingo-seed');
-  if (!seed) {
-    seed = `${crypto.randomUUID()}-${Date.now()}`;
-    sessionStorage.setItem('bingo-seed', seed);
-  }
-  return seed;
-}
-
+/**
+ * 새로운 시드 생성
+ * @returns UUID + 타임스탬프 기반 고유 시드
+ */
 function generateNewSeed(): string {
-  const seed = `${crypto.randomUUID()}-${Date.now()}`;
-  sessionStorage.setItem('bingo-seed', seed);
-  return seed;
+  return `${crypto.randomUUID()}-${Date.now()}`;
 }
 
-// 빙고 성공에 필요한 줄 수 (기본값: 3줄)
-// 이 값을 변경하면 성공 조건을 쉽게 조정할 수 있습니다
-const REQUIRED_LINES = 3;
+/**
+ * 보드 초기화: 그리드 크기와 시드를 기반으로 키워드 배열 생성
+ * @param size 그리드 크기 (3~7)
+ * @param seed 시드 문자열
+ * @param wordArray 사용할 키워드 배열 (PRACTICE_KEYWORDS 또는 CLIMATE_KEYWORDS)
+ * @returns 셔플된 키워드 데이터 배열
+ */
+function initBoard(size: GridSize, seed: string, wordArray: KeywordData[]): KeywordData[] {
+  const totalCells = size * size;
+  
+  if (wordArray.length < totalCells) {
+    console.warn(`Not enough keywords for ${size}x${size} grid. Need ${totalCells}, have ${wordArray.length}`);
+  }
+  
+  return seededShuffle(wordArray, `${seed}-${size}`).slice(0, totalCells);
+}
+
+/**
+ * 완성된 빙고 줄 계산
+ * @param selected 선택된 타일의 인덱스 Set
+ * @param size 그리드 크기
+ * @returns 완성된 줄들의 배열 (행/열/대각선 포함)
+ */
+function getCompletedLines(selected: Set<number>, size: GridSize): number[][] {
+  const lines: number[][] = [];
+  
+  // 모든 행 검사
+  for (let i = 0; i < size; i++) {
+    const row = Array.from({ length: size }, (_, j) => i * size + j);
+    if (row.every(idx => selected.has(idx))) {
+      lines.push(row);
+    }
+  }
+  
+  // 모든 열 검사
+  for (let i = 0; i < size; i++) {
+    const col = Array.from({ length: size }, (_, j) => j * size + i);
+    if (col.every(idx => selected.has(idx))) {
+      lines.push(col);
+    }
+  }
+  
+  // 왼쪽 위 → 오른쪽 아래 대각선
+  const diagonal1 = Array.from({ length: size }, (_, i) => i * size + i);
+  if (diagonal1.every(idx => selected.has(idx))) {
+    lines.push(diagonal1);
+  }
+  
+  // 오른쪽 위 → 왼쪽 아래 대각선
+  const diagonal2 = Array.from({ length: size }, (_, i) => i * size + (size - 1 - i));
+  if (diagonal2.every(idx => selected.has(idx))) {
+    lines.push(diagonal2);
+  }
+
+  return lines;
+}
+
+/**
+ * 보드에서 특정 단어가 있는 인덱스를 찾아 마킹
+ * @param board 보드 데이터 배열
+ * @param word 찾을 단어
+ * @param selected 현재 선택된 타일 Set
+ * @returns 마킹된 인덱스 배열
+ */
+function markIfExists(board: KeywordData[], word: string, selected: Set<number>): number[] {
+  const marked: number[] = [];
+  board.forEach((data, idx) => {
+    if (data.keyword === word && !selected.has(idx)) {
+      marked.push(idx);
+    }
+  });
+  return marked;
+}
+
+// ============================================================
+// 메인 컴포넌트
+// ============================================================
 
 export default function BingoGame() {
-  const [level, setLevel] = useState<number>(1);
-  const [gridData, setGridData] = useState<KeywordData[]>([]);
-  const [selectedTiles, setSelectedTiles] = useState<Set<number>>(new Set());
+  // 공통 상태
+  const [gameMode, setGameMode] = useState<GameMode>('group');
+  const [gridSize, setGridSize] = useState<GridSize>(3);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentTile, setCurrentTile] = useState<KeywordData | null>(null);
+
+  // 모둠 모드 상태 (기존 로직)
+  const [level, setLevel] = useState<number>(1);
+  const [groupBoard, setGroupBoard] = useState<KeywordData[]>([]);
+  const [groupSelected, setGroupSelected] = useState<Set<number>>(new Set());
+  const [groupSeed, setGroupSeed] = useState<string>('');
   const [hasBingo, setHasBingo] = useState(false);
   const [winningLines, setWinningLines] = useState<number[][]>([]);
-  const [currentSeed, setCurrentSeed] = useState<string>('');
   const [levelCompleteModalOpen, setLevelCompleteModalOpen] = useState(false);
   const [allLevelsComplete, setAllLevelsComplete] = useState(false);
-  // 현재 완성된 줄의 개수 (진행도 표시용)
   const [completedLinesCount, setCompletedLinesCount] = useState<number>(0);
-  
-  const gridSize: GridSize = (level + 2) as GridSize;
 
-  useEffect(() => {
-    const seed = getSessionSeed();
-    setCurrentSeed(seed);
-    initializeGame(gridSize, seed);
-  }, []);
+  // 혼자하기 모드 상태
+  const [playerBoard, setPlayerBoard] = useState<KeywordData[]>([]);
+  const [computerBoard, setComputerBoard] = useState<KeywordData[]>([]);
+  const [playerSelected, setPlayerSelected] = useState<Set<number>>(new Set());
+  const [computerSelected, setComputerSelected] = useState<Set<number>>(new Set());
+  const [drawnWords, setDrawnWords] = useState<Set<string>>(new Set());
+  const [currentDrawnWord, setCurrentDrawnWord] = useState<KeywordData | null>(null);
+  const [playerLines, setPlayerLines] = useState<number>(0);
+  const [computerLines, setComputerLines] = useState<number>(0);
+  const [gameResult, setGameResult] = useState<GameResult>(null);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
 
+  // 초기화
   useEffect(() => {
-    if (currentSeed) {
-      initializeGame(gridSize, currentSeed);
+    if (gameMode === 'group') {
+      initGroupMode();
+    } else {
+      initSoloMode();
     }
-  }, [gridSize]);
+  }, [gameMode, gridSize]);
 
-  const initializeGame = (size: GridSize, seed: string) => {
-    const totalCells = size * size;
+  // 모둠 모드 초기화
+  const initGroupMode = () => {
+    const seed = generateNewSeed();
+    setGroupSeed(seed);
+    const size = (level + 2) as GridSize;
     const sourceArray = size === 3 ? PRACTICE_KEYWORDS : CLIMATE_KEYWORDS;
-    
-    if (sourceArray.length < totalCells) {
-      console.warn(`Not enough keywords for ${size}x${size} grid. Need ${totalCells}, have ${sourceArray.length}`);
-    }
-    
-    const shuffled = seededShuffle(sourceArray, `${seed}-${size}`).slice(0, totalCells);
-    setGridData(shuffled);
-    setSelectedTiles(new Set());
+    const board = initBoard(size, seed, sourceArray);
+    setGroupBoard(board);
+    setGroupSelected(new Set());
     setHasBingo(false);
     setWinningLines([]);
-    // 진행도 초기화
     setCompletedLinesCount(0);
   };
 
-  /**
-   * 완성된 빙고 줄을 계산하는 함수
-   * @param selected 선택된 타일의 인덱스 Set
-   * @param size 그리드 크기 (3x3, 4x4 등)
-   * @returns 완성된 줄들의 배열 (행/열/대각선 포함, 중복 없음)
-   */
-  const getCompletedLines = (selected: Set<number>, size: GridSize): number[][] => {
-    const lines: number[][] = [];
+  // 혼자하기 모드 초기화
+  const initSoloMode = () => {
+    const playerSeed = generateNewSeed();
+    const computerSeed = generateNewSeed();
+    const sourceArray = gridSize === 3 ? PRACTICE_KEYWORDS : CLIMATE_KEYWORDS;
     
-    // 모든 행 검사
-    for (let i = 0; i < size; i++) {
-      const row = Array.from({ length: size }, (_, j) => i * size + j);
-      if (row.every(idx => selected.has(idx))) {
-        lines.push(row);
-      }
-    }
-    
-    // 모든 열 검사
-    for (let i = 0; i < size; i++) {
-      const col = Array.from({ length: size }, (_, j) => j * size + i);
-      if (col.every(idx => selected.has(idx))) {
-        lines.push(col);
-      }
-    }
-    
-    // 왼쪽 위 → 오른쪽 아래 대각선
-    const diagonal1 = Array.from({ length: size }, (_, i) => i * size + i);
-    if (diagonal1.every(idx => selected.has(idx))) {
-      lines.push(diagonal1);
-    }
-    
-    // 오른쪽 위 → 왼쪽 아래 대각선
-    const diagonal2 = Array.from({ length: size }, (_, i) => i * size + (size - 1 - i));
-    if (diagonal2.every(idx => selected.has(idx))) {
-      lines.push(diagonal2);
-    }
-
-    return lines;
+    setPlayerBoard(initBoard(gridSize, playerSeed, sourceArray));
+    setComputerBoard(initBoard(gridSize, computerSeed, sourceArray));
+    setPlayerSelected(new Set());
+    setComputerSelected(new Set());
+    setDrawnWords(new Set());
+    setCurrentDrawnWord(null);
+    setPlayerLines(0);
+    setComputerLines(0);
+    setGameResult(null);
+    setResultModalOpen(false);
   };
 
-  /**
-   * 타일 클릭 핸들러
-   * 타일을 선택하고, 완성된 줄 수를 계산하여 진행도를 업데이트합니다.
-   * REQUIRED_LINES 이상 완성하면 레벨 완료 처리됩니다.
-   */
-  const handleTileClick = (index: number, data: KeywordData) => {
-    if (selectedTiles.has(index) || allLevelsComplete) return;
+  // 모둠 모드: 타일 클릭 핸들러
+  const handleGroupTileClick = (index: number, data: KeywordData) => {
+    if (groupSelected.has(index) || allLevelsComplete) return;
     
-    const newSelected = new Set(selectedTiles);
+    const newSelected = new Set(groupSelected);
     newSelected.add(index);
-    setSelectedTiles(newSelected);
+    setGroupSelected(newSelected);
     
     setCurrentTile(data);
     setModalOpen(true);
     
-    // 완성된 줄들을 계산 (중복 없이)
-    const completedLines = getCompletedLines(newSelected, gridSize);
+    const completedLines = getCompletedLines(newSelected, (level + 2) as GridSize);
     const linesCount = completedLines.length;
     
-    // 진행도 업데이트
     setCompletedLinesCount(linesCount);
     setWinningLines(completedLines);
     
-    // REQUIRED_LINES 이상 완성했을 때만 레벨 완료 처리
     if (linesCount >= REQUIRED_LINES && !hasBingo) {
       setHasBingo(true);
       setTimeout(() => {
@@ -235,6 +312,62 @@ export default function BingoGame() {
     }
   };
 
+  // 혼자하기 모드: 단어 뽑기
+  const handleDrawWord = () => {
+    if (gameResult) return;
+    
+    const sourceArray = gridSize === 3 ? PRACTICE_KEYWORDS : CLIMATE_KEYWORDS;
+    const availableWords = sourceArray.filter(w => !drawnWords.has(w.keyword));
+    
+    if (availableWords.length === 0) {
+      alert('모든 단어를 다 뽑았습니다!');
+      return;
+    }
+    
+    const randomIndex = Math.floor(Math.random() * availableWords.length);
+    const drawnWord = availableWords[randomIndex];
+    
+    setCurrentDrawnWord(drawnWord);
+    const newDrawnWords = new Set(Array.from(drawnWords));
+    newDrawnWords.add(drawnWord.keyword);
+    setDrawnWords(newDrawnWords);
+    
+    // 플레이어 보드에서 해당 단어 찾아서 마킹
+    const playerMarked = markIfExists(playerBoard, drawnWord.keyword, playerSelected);
+    const newPlayerSelected = new Set(playerSelected);
+    playerMarked.forEach(idx => newPlayerSelected.add(idx));
+    setPlayerSelected(newPlayerSelected);
+    
+    // 컴퓨터 보드에서 해당 단어 찾아서 마킹
+    const computerMarked = markIfExists(computerBoard, drawnWord.keyword, computerSelected);
+    const newComputerSelected = new Set(computerSelected);
+    computerMarked.forEach(idx => newComputerSelected.add(idx));
+    setComputerSelected(newComputerSelected);
+    
+    // 완성된 줄 수 계산
+    const playerCompletedLines = getCompletedLines(newPlayerSelected, gridSize);
+    const computerCompletedLines = getCompletedLines(newComputerSelected, gridSize);
+    
+    setPlayerLines(playerCompletedLines.length);
+    setComputerLines(computerCompletedLines.length);
+    
+    // 승패 판정
+    const playerWon = playerCompletedLines.length >= REQUIRED_LINES;
+    const computerWon = computerCompletedLines.length >= REQUIRED_LINES;
+    
+    if (playerWon && computerWon) {
+      setGameResult('draw');
+      setTimeout(() => setResultModalOpen(true), 500);
+    } else if (playerWon) {
+      setGameResult('player');
+      setTimeout(() => setResultModalOpen(true), 500);
+    } else if (computerWon) {
+      setGameResult('computer');
+      setTimeout(() => setResultModalOpen(true), 500);
+    }
+  };
+
+  // 모둠 모드: 다음 레벨
   const handleNextLevel = () => {
     setLevelCompleteModalOpen(false);
     
@@ -247,18 +380,31 @@ export default function BingoGame() {
     setHasBingo(false);
   };
 
+  // 리셋
   const handleReset = () => {
     if (confirm('처음부터 다시 시작하시겠습니까?')) {
-      const newSeed = generateNewSeed();
-      setCurrentSeed(newSeed);
-      setLevel(1);
-      setHasBingo(false);
-      setAllLevelsComplete(false);
-      setLevelCompleteModalOpen(false);
-      initializeGame(3, newSeed);
+      if (gameMode === 'group') {
+        setLevel(1);
+        setAllLevelsComplete(false);
+        setLevelCompleteModalOpen(false);
+        initGroupMode();
+      } else {
+        initSoloMode();
+      }
     }
   };
 
+  // 그리드 크기 선택
+  const handleGridSizeChange = (size: GridSize) => {
+    setGridSize(size);
+  };
+
+  // 모드 변경
+  const handleModeChange = (mode: GameMode) => {
+    setGameMode(mode);
+  };
+
+  // 유틸리티 함수들
   const isWinningTile = (index: number): boolean => {
     return winningLines.some(line => line.includes(index));
   };
@@ -278,9 +424,9 @@ export default function BingoGame() {
     ];
     return messages[lv - 1] || messages[0];
   };
-  
-  const getTileSize = () => {
-    switch(gridSize) {
+
+  const getTileSize = (size: GridSize) => {
+    switch(size) {
       case 3: return 'text-xs sm:text-sm md:text-base';
       case 4: return 'text-[0.7rem] sm:text-xs md:text-sm';
       case 5: return 'text-[0.65rem] sm:text-xs md:text-sm';
@@ -290,242 +436,554 @@ export default function BingoGame() {
     }
   };
 
+  const getResultMessage = (): { title: string; message: string } => {
+    if (gameResult === 'player') {
+      return { title: '🎉 플레이어 승리!', message: '축하합니다! 컴퓨터를 이겼습니다!' };
+    } else if (gameResult === 'computer') {
+      return { title: '💻 컴퓨터 승리', message: '아쉽네요. 다시 도전해보세요!' };
+    } else {
+      return { title: '🤝 무승부!', message: '동시에 빙고를 완성했습니다!' };
+    }
+  };
+
+  // ============================================================
+  // 렌더링
+  // ============================================================
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-accent/20 via-background to-primary/10 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-6xl mx-auto">
         <header className="text-center mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-2 tracking-tight flex items-center justify-center gap-3 flex-wrap">
-            <span>기후 위기 빙고 챌린지 🌏</span>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-2 tracking-tight">
+            기후 위기 빙고 챌린지 🌏
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base mt-2">
-            3×3부터 7×7까지 모든 빙고를 완성하여 지구 지킴이 등단에 도전하세요!
+            {gameMode === 'group' 
+              ? '3×3부터 7×7까지 모든 빙고를 완성하여 지구 지킴이 등단에 도전하세요!'
+              : '컴퓨터와 대결하여 먼저 3줄을 완성하세요!'}
           </p>
         </header>
 
-        {allLevelsComplete ? (
-          <div 
-            className="bg-gradient-to-r from-primary via-accent to-secondary p-6 sm:p-8 rounded-xl shadow-2xl mb-6 animate-in zoom-in duration-700"
-            data-testid="all-complete-banner"
-          >
-            <div className="flex flex-col items-center justify-center gap-4">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center">
-                🏆 지구 지킴이 등단 🌍
-              </h2>
-              <p className="text-lg sm:text-xl text-white/90 text-center">
-                모든 단계를 완료하셨습니다!<br />당신은 진정한 기후 영웅입니다!
-              </p>
-            </div>
-          </div>
-        ) : (
+        {/* 모드 선택 */}
+        <div className="mb-6">
+          <Tabs value={gameMode} onValueChange={(v) => handleModeChange(v as GameMode)}>
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+              <TabsTrigger value="group" className="gap-2" data-testid="mode-group">
+                <Users className="w-4 h-4" />
+                모둠 모드
+              </TabsTrigger>
+              <TabsTrigger value="solo" className="gap-2" data-testid="mode-solo">
+                <Bot className="w-4 h-4" />
+                혼자하기
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* 혼자하기 모드: 그리드 크기 선택 */}
+        {gameMode === 'solo' && (
           <div className="mb-6">
             <div className="bg-card/90 backdrop-blur-sm p-4 rounded-lg border border-card-border shadow-md">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="default" className="text-base font-bold px-3 py-1">
-                      {getLevelName(level)}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {gridSize}×{gridSize} 그리드
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      {level === 1 ? '연습 단계로 시작합니다' : `레벨 ${level}/5 진행 중`}
-                    </p>
-                    {/* 빙고 진행도 표시: 완성된 줄 수 / 필요한 줄 수 */}
-                    <div className="flex items-center gap-2">
-                      <Badge 
-                        variant={completedLinesCount >= REQUIRED_LINES ? "default" : "secondary"}
-                        className="text-sm font-bold px-2 py-0.5"
-                        data-testid="progress-badge"
-                      >
-                        진행도: {completedLinesCount} / {REQUIRED_LINES}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map(lv => (
-                    <div
-                      key={lv}
-                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm border-2 ${
-                        lv < level
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : lv === level
-                          ? 'bg-accent text-accent-foreground border-accent animate-pulse'
-                          : 'bg-muted text-muted-foreground border-muted'
-                      }`}
-                      data-testid={`level-indicator-${lv}`}
-                    >
-                      {lv < level ? '✓' : lv}
-                    </div>
-                  ))}
-                </div>
+              <p className="text-sm font-medium text-muted-foreground mb-3 text-center">그리드 크기 선택</p>
+              <div className="flex justify-center gap-2 flex-wrap">
+                {[3, 4, 5, 6, 7].map((size) => (
+                  <Button
+                    key={size}
+                    variant={gridSize === size ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleGridSizeChange(size as GridSize)}
+                    data-testid={`grid-size-${size}`}
+                    className="min-w-[4rem]"
+                  >
+                    {size}×{size}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {hasBingo && !allLevelsComplete && (
-          <div 
-            className="bg-gradient-to-r from-primary via-accent to-secondary p-4 sm:p-6 rounded-lg shadow-lg mb-6 animate-in slide-in-from-top duration-500"
-            data-testid="victory-banner"
-          >
-            <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center">
-                빙고 완성! 🌍
-              </h2>
-            </div>
-          </div>
+        {/* 모둠 모드 렌더링 */}
+        {gameMode === 'group' && (
+          <GroupModeUI
+            level={level}
+            gridSize={(level + 2) as GridSize}
+            board={groupBoard}
+            selected={groupSelected}
+            completedLinesCount={completedLinesCount}
+            hasBingo={hasBingo}
+            allLevelsComplete={allLevelsComplete}
+            winningLines={winningLines}
+            onTileClick={handleGroupTileClick}
+            onReset={handleReset}
+            getLevelName={getLevelName}
+            getTileSize={getTileSize}
+            isWinningTile={isWinningTile}
+          />
         )}
 
-        <div className="bg-card/80 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-xl shadow-xl border border-card-border">
-          <div 
-            className={`grid gap-1.5 sm:gap-2 md:gap-3 mb-6`}
-            style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
-            data-testid="bingo-grid"
-            role="grid"
-            aria-label={`${gridSize}x${gridSize} 빙고 게임판`}
-          >
-            {gridData.map((data, index) => {
-              const isSelected = selectedTiles.has(index);
-              const isWinning = isWinningTile(index);
-              
-              return (
-                <button
-                  key={index}
-                  onClick={() => handleTileClick(index, data)}
-                  disabled={isSelected}
-                  data-testid={`tile-${index}`}
-                  role="gridcell"
-                  aria-label={`${data.keyword} ${isSelected ? '선택됨' : '선택 안됨'}`}
-                  className={`
-                    relative aspect-square rounded-xl sm:rounded-2xl p-1.5 sm:p-2 md:p-3
-                    flex items-center justify-center text-center
-                    ${getTileSize()} font-bold leading-tight
-                    transition-all duration-200 border-2
-                    ${isSelected 
-                      ? isWinning
-                        ? 'bg-gradient-to-br from-primary via-accent to-secondary text-white border-primary shadow-lg scale-105'
-                        : 'bg-primary text-primary-foreground border-primary shadow-md'
-                      : 'bg-card text-card-foreground border-card-border hover-elevate active-elevate-2 hover:scale-110 hover:shadow-lg cursor-pointer'
-                    }
-                    ${isSelected ? 'cursor-default' : ''}
-                  `}
-                >
-                  <span className="relative z-10 break-keep hyphens-auto">
-                    {data.keyword}
-                  </span>
-                  {isSelected && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className={`${gridSize >= 6 ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'}`}>🌱</span>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex justify-center">
-            <Button
-              onClick={handleReset}
-              size="lg"
-              variant="secondary"
-              className="gap-2 text-base sm:text-lg font-bold shadow-md"
-              data-testid="button-reset"
-              aria-label="처음부터 다시 시작"
-            >
-              <RotateCcw className="w-5 h-5" />
-              처음부터 다시 시작
-            </Button>
-          </div>
-        </div>
+        {/* 혼자하기 모드 렌더링 */}
+        {gameMode === 'solo' && (
+          <SoloModeUI
+            gridSize={gridSize}
+            playerBoard={playerBoard}
+            computerBoard={computerBoard}
+            playerSelected={playerSelected}
+            computerSelected={computerSelected}
+            playerLines={playerLines}
+            computerLines={computerLines}
+            currentDrawnWord={currentDrawnWord}
+            gameResult={gameResult}
+            onDrawWord={handleDrawWord}
+            onReset={handleReset}
+            getTileSize={getTileSize}
+          />
+        )}
 
         <footer className="text-center mt-6 sm:mt-8">
-          <p className="text-base sm:text-lg md:text-xl font-medium text-primary flex items-center justify-center gap-2 flex-wrap">
-            <span>지구를 지키는 작은 실천을 시작해요 🌱</span>
+          <p className="text-base sm:text-lg md:text-xl font-medium text-primary">
+            지구를 지키는 작은 실천을 시작해요 🌱
           </p>
         </footer>
       </div>
 
+      {/* 키워드 상세 모달 */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent 
-          className="sm:max-w-md bg-popover border-2 border-popover-border"
-          data-testid="modal-keyword-info"
-        >
-          {currentTile && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
-                  <span className="text-2xl">🌱</span>
-                  {currentTile.keyword}
-                </DialogTitle>
-              </DialogHeader>
-              <DialogDescription className="text-base leading-relaxed text-popover-foreground pt-2">
-                {currentTile.description}
-              </DialogDescription>
-              <div className="flex justify-center pt-4">
-                <Button
-                  onClick={() => setModalOpen(false)}
-                  variant="default"
-                  size="lg"
-                  className="font-bold"
-                  data-testid="button-close-modal"
-                >
-                  알겠어요!
-                </Button>
-              </div>
-            </>
-          )}
+        <DialogContent data-testid="keyword-modal">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+              🌱 {currentTile?.keyword}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="text-base text-foreground leading-relaxed py-4">
+            {currentTile?.description}
+          </DialogDescription>
+          <Button 
+            onClick={() => setModalOpen(false)} 
+            size="lg" 
+            className="w-full font-bold text-lg"
+            data-testid="button-modal-close"
+          >
+            알겠어요!
+          </Button>
         </DialogContent>
       </Dialog>
 
+      {/* 모둠 모드: 레벨 완료 모달 */}
       <Dialog open={levelCompleteModalOpen} onOpenChange={setLevelCompleteModalOpen}>
-        <DialogContent 
-          className="sm:max-w-lg bg-gradient-to-br from-primary/10 via-accent/10 to-secondary/10 border-2 border-primary/30"
-          data-testid="modal-level-complete"
-        >
-          {(() => {
-            const msg = getLevelCompleteMessage(level);
-            return (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="text-3xl font-bold text-primary text-center">
-                    {msg.title}
-                  </DialogTitle>
-                </DialogHeader>
-                <DialogDescription className="text-lg leading-relaxed text-foreground pt-4 text-center">
-                  {msg.message}
-                </DialogDescription>
-                <div className="flex justify-center pt-6 gap-3">
-                  {level < 5 ? (
-                    <Button
-                      onClick={handleNextLevel}
-                      variant="default"
-                      size="lg"
-                      className="font-bold text-lg px-8"
-                      data-testid="button-next-level"
-                    >
-                      다음 단계로 🚀
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleNextLevel}
-                      variant="default"
-                      size="lg"
-                      className="font-bold text-lg px-8"
-                      data-testid="button-complete-all"
-                    >
-                      완료! 🏆
-                    </Button>
-                  )}
-                </div>
-              </>
-            );
-          })()}
+        <DialogContent data-testid="level-complete-modal">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-primary text-center">
+              {getLevelCompleteMessage(level).title}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="text-lg text-foreground text-center py-4">
+            {getLevelCompleteMessage(level).message}
+          </DialogDescription>
+          <Button 
+            onClick={handleNextLevel} 
+            size="lg" 
+            className="w-full font-bold text-lg"
+            data-testid="button-next-level"
+          >
+            {level >= 5 ? '완료! 🎉' : '다음 단계로 🚀'}
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* 혼자하기 모드: 게임 결과 모달 */}
+      <Dialog open={resultModalOpen} onOpenChange={setResultModalOpen}>
+        <DialogContent data-testid="result-modal">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-primary text-center">
+              {getResultMessage().title}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="text-lg text-foreground text-center py-4">
+            {getResultMessage().message}
+          </DialogDescription>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => {
+                setResultModalOpen(false);
+                initSoloMode();
+              }} 
+              size="lg" 
+              className="flex-1 font-bold"
+              data-testid="button-play-again"
+            >
+              다시 하기
+            </Button>
+            <Button 
+              onClick={() => setResultModalOpen(false)} 
+              size="lg" 
+              variant="outline"
+              className="flex-1 font-bold"
+              data-testid="button-close-result"
+            >
+              닫기
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// ============================================================
+// 서브 컴포넌트: 모둠 모드 UI
+// ============================================================
+
+interface GroupModeUIProps {
+  level: number;
+  gridSize: GridSize;
+  board: KeywordData[];
+  selected: Set<number>;
+  completedLinesCount: number;
+  hasBingo: boolean;
+  allLevelsComplete: boolean;
+  winningLines: number[][];
+  onTileClick: (index: number, data: KeywordData) => void;
+  onReset: () => void;
+  getLevelName: (lv: number) => string;
+  getTileSize: (size: GridSize) => string;
+  isWinningTile: (index: number) => boolean;
+}
+
+function GroupModeUI({
+  level,
+  gridSize,
+  board,
+  selected,
+  completedLinesCount,
+  hasBingo,
+  allLevelsComplete,
+  winningLines,
+  onTileClick,
+  onReset,
+  getLevelName,
+  getTileSize,
+  isWinningTile,
+}: GroupModeUIProps) {
+  return (
+    <>
+      {allLevelsComplete ? (
+        <div 
+          className="bg-gradient-to-r from-primary via-accent to-secondary p-6 sm:p-8 rounded-xl shadow-2xl mb-6"
+          data-testid="all-complete-banner"
+        >
+          <div className="flex flex-col items-center justify-center gap-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center">
+              🏆 지구 지킴이 등단 🌍
+            </h2>
+            <p className="text-lg sm:text-xl text-white/90 text-center">
+              모든 단계를 완료하셨습니다!<br />당신은 진정한 기후 영웅입니다!
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-6">
+          <div className="bg-card/90 backdrop-blur-sm p-4 rounded-lg border border-card-border shadow-md">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge variant="default" className="text-base font-bold px-3 py-1">
+                    {getLevelName(level)}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {gridSize}×{gridSize} 그리드
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {level === 1 ? '연습 단계로 시작합니다' : `레벨 ${level}/5 진행 중`}
+                  </p>
+                  <Badge 
+                    variant={completedLinesCount >= REQUIRED_LINES ? "default" : "secondary"}
+                    className="text-sm font-bold px-2 py-0.5"
+                    data-testid="progress-badge"
+                  >
+                    진행도: {completedLinesCount} / {REQUIRED_LINES}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map(lv => (
+                  <div
+                    key={lv}
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm border-2 ${
+                      lv < level
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : lv === level
+                        ? 'bg-accent text-accent-foreground border-accent animate-pulse'
+                        : 'bg-muted text-muted-foreground border-muted'
+                    }`}
+                    data-testid={`level-indicator-${lv}`}
+                  >
+                    {lv < level ? '✓' : lv}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hasBingo && !allLevelsComplete && (
+        <div 
+          className="bg-gradient-to-r from-primary via-accent to-secondary p-4 sm:p-6 rounded-lg shadow-lg mb-6"
+          data-testid="victory-banner"
+        >
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center">
+            빙고 완성! 🌍
+          </h2>
+        </div>
+      )}
+
+      <div className="bg-card/80 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-xl shadow-xl border border-card-border">
+        <div 
+          className="grid gap-1.5 sm:gap-2 md:gap-3 mb-6"
+          style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
+          data-testid="bingo-grid"
+        >
+          {board.map((data, index) => {
+            const isSelected = selected.has(index);
+            const isWinning = isWinningTile(index);
+            
+            return (
+              <button
+                key={index}
+                onClick={() => onTileClick(index, data)}
+                disabled={isSelected}
+                data-testid={`tile-${index}`}
+                className={`
+                  relative aspect-square rounded-xl sm:rounded-2xl p-1.5 sm:p-2 md:p-3
+                  flex items-center justify-center text-center
+                  ${getTileSize(gridSize)} font-bold leading-tight
+                  transition-all duration-200 border-2
+                  ${isSelected 
+                    ? isWinning
+                      ? 'bg-gradient-to-br from-primary via-accent to-secondary text-white border-primary shadow-lg scale-105'
+                      : 'bg-primary text-primary-foreground border-primary shadow-md'
+                    : 'bg-card text-card-foreground border-card-border hover-elevate active-elevate-2 hover:scale-110 hover:shadow-lg cursor-pointer'
+                  }
+                  ${isSelected ? 'cursor-default' : ''}
+                `}
+              >
+                <span className="relative z-10">
+                  {data.keyword}
+                </span>
+                {isSelected && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className={`${gridSize >= 6 ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'}`}>🌱</span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex justify-center">
+          <Button
+            onClick={onReset}
+            size="lg"
+            variant="secondary"
+            className="gap-2 text-base sm:text-lg font-bold shadow-md"
+            data-testid="button-reset"
+          >
+            <RotateCcw className="w-5 h-5" />
+            처음부터 다시 시작
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ============================================================
+// 서브 컴포넌트: 혼자하기 모드 UI
+// ============================================================
+
+interface SoloModeUIProps {
+  gridSize: GridSize;
+  playerBoard: KeywordData[];
+  computerBoard: KeywordData[];
+  playerSelected: Set<number>;
+  computerSelected: Set<number>;
+  playerLines: number;
+  computerLines: number;
+  currentDrawnWord: KeywordData | null;
+  gameResult: GameResult;
+  onDrawWord: () => void;
+  onReset: () => void;
+  getTileSize: (size: GridSize) => string;
+}
+
+function SoloModeUI({
+  gridSize,
+  playerBoard,
+  computerBoard,
+  playerSelected,
+  computerSelected,
+  playerLines,
+  computerLines,
+  currentDrawnWord,
+  gameResult,
+  onDrawWord,
+  onReset,
+  getTileSize,
+}: SoloModeUIProps) {
+  return (
+    <>
+      {/* 진행도 및 Draw 버튼 */}
+      <div className="mb-6">
+        <div className="bg-card/90 backdrop-blur-sm p-4 rounded-lg border border-card-border shadow-md">
+          <div className="flex flex-col gap-4">
+            {/* 진행도 */}
+            <div className="flex items-center justify-center gap-4 flex-wrap">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">플레이어</p>
+                <Badge 
+                  variant={playerLines >= REQUIRED_LINES ? "default" : "secondary"}
+                  className="text-base font-bold px-3 py-1"
+                  data-testid="player-progress"
+                >
+                  {playerLines} / {REQUIRED_LINES}
+                </Badge>
+              </div>
+              <div className="text-2xl font-bold text-muted-foreground">VS</div>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">컴퓨터</p>
+                <Badge 
+                  variant={computerLines >= REQUIRED_LINES ? "default" : "secondary"}
+                  className="text-base font-bold px-3 py-1"
+                  data-testid="computer-progress"
+                >
+                  {computerLines} / {REQUIRED_LINES}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Draw 버튼 */}
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={onDrawWord}
+                size="lg"
+                disabled={!!gameResult}
+                className="w-full gap-2 text-lg font-bold"
+                data-testid="button-draw"
+              >
+                🎲 단어 뽑기
+              </Button>
+              {currentDrawnWord && (
+                <div className="bg-primary/10 border-2 border-primary rounded-lg p-3 text-center">
+                  <p className="text-sm text-muted-foreground mb-1">뽑힌 단어</p>
+                  <p className="text-xl font-bold text-primary" data-testid="drawn-word">
+                    {currentDrawnWord.keyword}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 양쪽 보드 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* 플레이어 보드 */}
+        <div className="bg-card/80 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-xl border border-card-border">
+          <h3 className="text-lg font-bold text-center mb-4 text-primary">👤 플레이어</h3>
+          <div 
+            className="grid gap-1.5 sm:gap-2"
+            style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
+            data-testid="player-grid"
+          >
+            {playerBoard.map((data, index) => {
+              const isSelected = playerSelected.has(index);
+              
+              return (
+                <div
+                  key={index}
+                  data-testid={`player-tile-${index}`}
+                  className={`
+                    relative aspect-square rounded-lg p-1 sm:p-2
+                    flex items-center justify-center text-center
+                    ${getTileSize(gridSize)} font-bold leading-tight
+                    border-2 transition-all duration-200
+                    ${isSelected 
+                      ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                      : 'bg-card text-card-foreground border-card-border'
+                    }
+                  `}
+                >
+                  <span className="relative z-10">
+                    {data.keyword}
+                  </span>
+                  {isSelected && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className={`${gridSize >= 6 ? 'text-lg' : 'text-xl sm:text-2xl'}`}>🌱</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 컴퓨터 보드 */}
+        <div className="bg-card/80 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-xl border border-card-border">
+          <h3 className="text-lg font-bold text-center mb-4 text-accent">💻 컴퓨터</h3>
+          <div 
+            className="grid gap-1.5 sm:gap-2"
+            style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
+            data-testid="computer-grid"
+          >
+            {computerBoard.map((data, index) => {
+              const isSelected = computerSelected.has(index);
+              
+              return (
+                <div
+                  key={index}
+                  data-testid={`computer-tile-${index}`}
+                  className={`
+                    relative aspect-square rounded-lg p-1 sm:p-2
+                    flex items-center justify-center text-center
+                    ${getTileSize(gridSize)} font-bold leading-tight
+                    border-2 transition-all duration-200
+                    ${isSelected 
+                      ? 'bg-accent text-accent-foreground border-accent shadow-md'
+                      : 'bg-card text-card-foreground border-card-border'
+                    }
+                  `}
+                >
+                  <span className="relative z-10">
+                    {data.keyword}
+                  </span>
+                  {isSelected && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className={`${gridSize >= 6 ? 'text-lg' : 'text-xl sm:text-2xl'}`}>🌱</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* 리셋 버튼 */}
+      <div className="flex justify-center">
+        <Button
+          onClick={onReset}
+          size="lg"
+          variant="secondary"
+          className="gap-2 text-base sm:text-lg font-bold shadow-md"
+          data-testid="button-reset"
+        >
+          <RotateCcw className="w-5 h-5" />
+          새 게임
+        </Button>
+      </div>
+    </>
   );
 }

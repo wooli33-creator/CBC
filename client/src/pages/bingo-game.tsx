@@ -365,10 +365,17 @@ export default function BingoGame() {
     
     if (linesCount >= REQUIRED_LINES && !hasBingo) {
       setHasBingo(true);
+    }
+  };
+  
+  // 키워드 모달 닫기 핸들러
+  const handleCloseKeywordModal = () => {
+    setModalOpen(false);
+    // 빙고 완성 상태이면 레벨 완료 모달 열기
+    if (hasBingo) {
       setTimeout(() => {
-        setModalOpen(false);
         setLevelCompleteModalOpen(true);
-      }, 800);
+      }, 300);
     }
   };
 
@@ -628,7 +635,7 @@ export default function BingoGame() {
             {currentTile?.description}
           </DialogDescription>
           <Button 
-            onClick={() => setModalOpen(false)} 
+            onClick={handleCloseKeywordModal} 
             size="lg" 
             className="w-full font-bold text-lg"
             data-testid="button-modal-close"

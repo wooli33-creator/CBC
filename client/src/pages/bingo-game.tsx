@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RotateCcw, Users, Bot } from 'lucide-react';
+import { RotateCcw, Users, Bot, Check, Shuffle } from 'lucide-react';
 
 // ============================================================
 // 타입 정의
@@ -485,11 +485,11 @@ export default function BingoGame() {
 
   const getLevelCompleteMessage = (lv: number): { title: string; message: string } => {
     const messages = [
-      { title: '연습 완료! 🌱', message: '기본기를 익혔습니다. 이제 본격적인 도전을 시작해볼까요?' },
-      { title: '초급 달성! 🌿', message: '훌륭합니다! 기후 지식이 자라나고 있어요.' },
-      { title: '중급 달성! 🌳', message: '대단해요! 이제 진정한 기후 지킴이의 모습이 보입니다.' },
-      { title: '상급 달성! 🌲', message: '놀라워요! 거의 전문가 수준이에요. 마지막 도전만 남았습니다!' },
-      { title: '지구 지킴이 등단! 🏆🌍', message: '축하합니다! 모든 단계를 완료하셨습니다. 당신은 이제 진정한 지구 지킴이입니다!' }
+      { title: '연습 완료!', message: '기본기를 익혔습니다. 이제 본격적인 도전을 시작해볼까요?' },
+      { title: '초급 달성!', message: '훌륭합니다! 기후 지식이 자라나고 있어요.' },
+      { title: '중급 달성!', message: '대단해요! 이제 진정한 기후 지킴이의 모습이 보입니다.' },
+      { title: '상급 달성!', message: '놀라워요! 거의 전문가 수준이에요. 마지막 도전만 남았습니다!' },
+      { title: '지구 지킴이 등단!', message: '축하합니다! 모든 단계를 완료하셨습니다. 당신은 이제 진정한 지구 지킴이입니다!' }
     ];
     return messages[lv - 1] || messages[0];
   };
@@ -507,11 +507,11 @@ export default function BingoGame() {
 
   const getResultMessage = (): { title: string; message: string } => {
     if (gameResult === 'player') {
-      return { title: '🎉 플레이어 승리!', message: '축하합니다! 컴퓨터를 이겼습니다!' };
+      return { title: '플레이어 승리!', message: '축하합니다! 컴퓨터를 이겼습니다!' };
     } else if (gameResult === 'computer') {
-      return { title: '💻 컴퓨터 승리', message: '아쉽네요. 다시 도전해보세요!' };
+      return { title: '컴퓨터 승리', message: '아쉽네요. 다시 도전해보세요!' };
     } else {
-      return { title: '🤝 무승부!', message: '동시에 빙고를 완성했습니다!' };
+      return { title: '무승부!', message: '동시에 빙고를 완성했습니다!' };
     }
   };
 
@@ -524,7 +524,7 @@ export default function BingoGame() {
       <div className="w-full max-w-6xl mx-auto">
         <header className="text-center mb-6 sm:mb-8">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-2 tracking-tight">
-            기후 위기 빙고 챌린지 🌏
+            기후 위기 빙고 챌린지
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base mt-2">
             {gameMode === 'group' 
@@ -621,7 +621,7 @@ export default function BingoGame() {
         <DialogContent data-testid="keyword-modal">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
-              🌱 {currentTile?.keyword}
+              {currentTile?.keyword}
             </DialogTitle>
           </DialogHeader>
           <DialogDescription className="text-base text-foreground leading-relaxed py-4">
@@ -655,7 +655,7 @@ export default function BingoGame() {
             className="w-full font-bold text-lg"
             data-testid="button-next-level"
           >
-            {level >= 5 ? '완료! 🎉' : '다음 단계로 🚀'}
+            {level >= 5 ? '완료!' : '다음 단계로'}
           </Button>
         </DialogContent>
       </Dialog>
@@ -743,7 +743,7 @@ function GroupModeUI({
         >
           <div className="flex flex-col items-center justify-center gap-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center">
-              🏆 지구 지킴이 등단 🌍
+              지구 지킴이 등단
             </h2>
             <p className="text-lg sm:text-xl text-white/90 text-center">
               모든 단계를 완료하셨습니다!<br />당신은 진정한 기후 영웅입니다!
@@ -804,7 +804,7 @@ function GroupModeUI({
           data-testid="victory-banner"
         >
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center">
-            빙고 완성! 🌍
+            빙고 완성!
           </h2>
         </div>
       )}
@@ -844,7 +844,7 @@ function GroupModeUI({
                 </span>
                 {isSelected && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className={`${gridSize >= 6 ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'}`}>🌱</span>
+                    <Check className={`${gridSize >= 6 ? 'w-6 h-6 sm:w-8 sm:h-8' : 'w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12'} text-white`} strokeWidth={3} />
                   </div>
                 )}
               </button>
@@ -942,7 +942,8 @@ function SoloModeUI({
                 className="w-full gap-2 text-lg font-bold"
                 data-testid="button-draw"
               >
-                🎲 단어 뽑기
+                <Shuffle className="w-5 h-5" />
+                단어 뽑기
               </Button>
               {currentDrawnWord && (
                 <div className="bg-primary/10 border-2 border-primary rounded-lg p-3 text-center">
@@ -961,7 +962,10 @@ function SoloModeUI({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* 플레이어 보드 */}
         <div className="bg-card/80 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-xl border border-card-border">
-          <h3 className="text-lg font-bold text-center mb-4 text-primary">👤 플레이어</h3>
+          <h3 className="text-lg font-bold text-center mb-4 text-primary flex items-center justify-center gap-2">
+            <Users className="w-5 h-5" />
+            플레이어
+          </h3>
           <div 
             className="grid gap-1.5 sm:gap-2"
             style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
@@ -990,7 +994,7 @@ function SoloModeUI({
                   </span>
                   {isSelected && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className={`${gridSize >= 6 ? 'text-lg' : 'text-xl sm:text-2xl'}`}>🌱</span>
+                      <Check className={`${gridSize >= 6 ? 'w-4 h-4' : 'w-5 h-5 sm:w-6 sm:h-6'} text-white`} strokeWidth={3} />
                     </div>
                   )}
                 </div>
@@ -1001,7 +1005,10 @@ function SoloModeUI({
 
         {/* 컴퓨터 보드 */}
         <div className="bg-card/80 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-xl border border-card-border">
-          <h3 className="text-lg font-bold text-center mb-4 text-accent">💻 컴퓨터</h3>
+          <h3 className="text-lg font-bold text-center mb-4 text-accent flex items-center justify-center gap-2">
+            <Bot className="w-5 h-5" />
+            컴퓨터
+          </h3>
           <div 
             className="grid gap-1.5 sm:gap-2"
             style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
@@ -1030,7 +1037,7 @@ function SoloModeUI({
                   </span>
                   {isSelected && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className={`${gridSize >= 6 ? 'text-lg' : 'text-xl sm:text-2xl'}`}>🌱</span>
+                      <Check className={`${gridSize >= 6 ? 'w-4 h-4' : 'w-5 h-5 sm:w-6 sm:h-6'} text-white`} strokeWidth={3} />
                     </div>
                   )}
                 </div>

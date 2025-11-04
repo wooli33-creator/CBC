@@ -22,7 +22,15 @@ type GameResult = 'player' | 'computer' | 'draw' | null;
 // 상수 정의
 // ============================================================
 
-// 빙고 성공에 필요한 줄 수 (기본값: 3줄)
+/**
+ * requiredLines: 빙고 성공에 필요한 줄 수
+ * 
+ * - 기본값: 3줄 (가로/세로/대각선 중 총 3줄 완성 시 승리)
+ * - 이 값을 변경하면 난이도 조절 가능
+ * - 진행도 UI (Progress: X / requiredLines)에 반영됨
+ * - 모둠 모드: 레벨 완료 조건
+ * - 혼자하기 모드: 승패 판정 조건
+ */
 const REQUIRED_LINES = 3;
 
 // 연습용 키워드 (3×3)
@@ -138,32 +146,58 @@ function generateNewSeed(): string {
 }
 
 /**
- * 보드 초기화: 그리드 크기와 시드를 기반으로 키워드 배열 생성
+ * 보드 초기화 (buildBoard): 그리드 크기와 시드를 기반으로 키워드 배열 생성
+ * 
+ * DOM 생성 및 grid-template-columns 반영:
+ * - 실제 DOM은 컴포넌트 렌더링에서 board.map()으로 생성 (정확히 size*size개)
+ * - CSS는 style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}로 동적 반영
+ * 
+ * 단어 선택 로직 (pickWords):
+ * - 3×3(연습): PRACTICE_KEYWORDS 사용
+ * - 4×4~7×7: CLIMATE_KEYWORDS 사용
+ * - 시드 셔플 → slice(0, size*size)로 정확한 개수 선택
+ * - 단어 부족 시: 사용자에게 경고 메시지 표시
+ * 
  * @param size 그리드 크기 (3~7)
  * @param seed 시드 문자열
  * @param wordArray 사용할 키워드 배열 (PRACTICE_KEYWORDS 또는 CLIMATE_KEYWORDS)
- * @returns 셔플된 키워드 데이터 배열
+ * @returns 셔플된 키워드 데이터 배열 (정확히 size*size 개)
  */
 function initBoard(size: GridSize, seed: string, wordArray: KeywordData[]): KeywordData[] {
   const totalCells = size * size;
   
+  // 단어 부족 검사
   if (wordArray.length < totalCells) {
-    console.warn(`Not enough keywords for ${size}x${size} grid. Need ${totalCells}, have ${wordArray.length}`);
+    const msg = `⚠️ 단어가 부족합니다!\n현재 ${wordArray.length}개 / 필요 ${totalCells}개\n\n${size}×${size} 그리드를 생성하려면 ${totalCells}개의 단어가 필요합니다.`;
+    alert(msg);
+    console.error(`Not enough keywords for ${size}x${size} grid. Need ${totalCells}, have ${wordArray.length}`);
   }
   
+  // 시드 기반 셔플 후 정확히 size*size 개수만 선택
   return seededShuffle(wordArray, `${seed}-${size}`).slice(0, totalCells);
 }
 
 /**
- * 완성된 빙고 줄 계산
+ * 완성된 빙고 줄 계산 (getCompletedLines): 동적 size 기반 가로/세로/대각선 판정
+ * 
+ * 빙고 판정 로직:
+ * - 동적 size를 기준으로 모든 줄 검사
+ * - 행(row): i * size + j (각 행은 size개의 연속된 타일)
+ * - 열(col): j * size + i (각 열은 size 간격으로 떨어진 타일)
+ * - 대각선1 (↘): i * size + i (0, size+1, 2*size+2, ...)
+ * - 대각선2 (↙): i * size + (size - 1 - i)
+ * 
+ * 중복 방지:
+ * - 이미 완성된 줄은 배열에 한 번만 포함 (Set이 아닌 배열 반환이지만 중복 체크는 호출자가 관리)
+ * 
  * @param selected 선택된 타일의 인덱스 Set
- * @param size 그리드 크기
- * @returns 완성된 줄들의 배열 (행/열/대각선 포함)
+ * @param size 그리드 크기 (동적으로 3~7 가능)
+ * @returns 완성된 줄들의 배열 (각 줄은 인덱스 배열)
  */
 function getCompletedLines(selected: Set<number>, size: GridSize): number[][] {
   const lines: number[][] = [];
   
-  // 모든 행 검사
+  // 모든 행 검사 (가로줄)
   for (let i = 0; i < size; i++) {
     const row = Array.from({ length: size }, (_, j) => i * size + j);
     if (row.every(idx => selected.has(idx))) {
@@ -171,7 +205,7 @@ function getCompletedLines(selected: Set<number>, size: GridSize): number[][] {
     }
   }
   
-  // 모든 열 검사
+  // 모든 열 검사 (세로줄)
   for (let i = 0; i < size; i++) {
     const col = Array.from({ length: size }, (_, j) => j * size + i);
     if (col.every(idx => selected.has(idx))) {
@@ -179,13 +213,13 @@ function getCompletedLines(selected: Set<number>, size: GridSize): number[][] {
     }
   }
   
-  // 왼쪽 위 → 오른쪽 아래 대각선
+  // 왼쪽 위 → 오른쪽 아래 대각선 (↘)
   const diagonal1 = Array.from({ length: size }, (_, i) => i * size + i);
   if (diagonal1.every(idx => selected.has(idx))) {
     lines.push(diagonal1);
   }
   
-  // 오른쪽 위 → 왼쪽 아래 대각선
+  // 오른쪽 위 → 왼쪽 아래 대각선 (↙)
   const diagonal2 = Array.from({ length: size }, (_, i) => i * size + (size - 1 - i));
   if (diagonal2.every(idx => selected.has(idx))) {
     lines.push(diagonal2);
@@ -245,7 +279,14 @@ export default function BingoGame() {
   const [gameResult, setGameResult] = useState<GameResult>(null);
   const [resultModalOpen, setResultModalOpen] = useState(false);
 
-  // 초기화
+  /**
+   * 초기화 Effect: gameMode 또는 gridSize 변경 시 실행 (onSizeChange)
+   * 
+   * size 변경 시 초기화 절차:
+   * 1. 보드/선택상태/진행도/완성 줄 집합 완전 초기화
+   * 2. 새로운 시드로 보드 재생성
+   * 3. UI 즉시 갱신 (grid-template-columns도 자동 반영)
+   */
   useEffect(() => {
     if (gameMode === 'group') {
       initGroupMode();
@@ -254,7 +295,15 @@ export default function BingoGame() {
     }
   }, [gameMode, gridSize]);
 
-  // 모둠 모드 초기화
+  /**
+   * 모둠 모드 초기화 (resetGame for Group Mode)
+   * 
+   * 초기화 절차:
+   * - 새 시드 생성하여 보드 재생성
+   * - 선택상태, 진행도, 완성 줄 모두 초기화
+   * - level에 따라 그리드 크기 결정 (level+2)
+   * - 3×3은 PRACTICE_KEYWORDS, 4×4~7×7은 CLIMATE_KEYWORDS 사용
+   */
   const initGroupMode = () => {
     const seed = generateNewSeed();
     setGroupSeed(seed);
@@ -268,7 +317,15 @@ export default function BingoGame() {
     setCompletedLinesCount(0);
   };
 
-  // 혼자하기 모드 초기화
+  /**
+   * 혼자하기 모드 초기화 (resetGame for Solo Mode)
+   * 
+   * 초기화 절차:
+   * - 플레이어/컴퓨터 각각 다른 시드로 보드 생성
+   * - 선택상태, 뽑은 단어, 진행도, 게임 결과 모두 초기화
+   * - gridSize에 따라 그리드 크기 결정 (사용자 선택)
+   * - 3×3은 PRACTICE_KEYWORDS, 4×4~7×7은 CLIMATE_KEYWORDS 사용
+   */
   const initSoloMode = () => {
     const playerSeed = generateNewSeed();
     const computerSeed = generateNewSeed();

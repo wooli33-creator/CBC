@@ -168,7 +168,7 @@ function initBoard(size: GridSize, seed: string, wordArray: KeywordData[]): Keyw
   
   // 단어 부족 검사
   if (wordArray.length < totalCells) {
-    const msg = `⚠️ 단어가 부족합니다!\n현재 ${wordArray.length}개 / 필요 ${totalCells}개\n\n${size}×${size} 그리드를 생성하려면 ${totalCells}개의 단어가 필요합니다.`;
+    const msg = `단어가 부족합니다!\n현재 ${wordArray.length}개 / 필요 ${totalCells}개\n\n${size}×${size} 그리드를 생성하려면 ${totalCells}개의 단어가 필요합니다.`;
     alert(msg);
     console.error(`Not enough keywords for ${size}x${size} grid. Need ${totalCells}, have ${wordArray.length}`);
   }

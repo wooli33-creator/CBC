@@ -178,6 +178,28 @@ function initBoard(size: GridSize, seed: string, wordArray: KeywordData[]): Keyw
 }
 
 /**
+ * 모둠 모드 전용 보드 초기화: 같은 단어, 다른 배열
+ * 
+ * 모둠 빙고 특성:
+ * - 모든 플레이어가 같은 단어 세트를 공유 (한 사람이 부른 단어를 모두가 가지고 있음)
+ * - 하지만 각자 배열이 다름 (빙고 완성 위치가 달라서 경쟁 가능)
+ * 
+ * @param size 그리드 크기
+ * @param wordArray 전체 키워드 배열
+ * @param randomSeed 각 세션별 랜덤 시드 (배열 순서 결정)
+ * @returns 셔플된 키워드 데이터 배열
+ */
+function initGroupBoard(size: GridSize, wordArray: KeywordData[], randomSeed: string): KeywordData[] {
+  const totalCells = size * size;
+  
+  // 레벨별로 같은 단어 세트 사용 (앞에서부터 필요한 개수만큼)
+  const fixedWordSet = wordArray.slice(0, totalCells);
+  
+  // 각 세션마다 다른 배열로 셔플
+  return seededShuffle(fixedWordSet, randomSeed);
+}
+
+/**
  * 완성된 빙고 줄 계산 (getCompletedLines): 동적 size 기반 가로/세로/대각선 판정
  * 
  * 빙고 판정 로직:
@@ -302,21 +324,22 @@ export default function BingoGame() {
    * 모둠 모드 초기화 (resetGame for Group Mode)
    * 
    * 초기화 절차:
-   * - 레벨별 고정 시드 사용 (모든 플레이어가 같은 단어 공유)
+   * - 레벨별 같은 단어 세트 사용 (모든 플레이어가 같은 단어 공유)
+   * - 하지만 각 세션마다 다른 배열 (랜덤 시드)
    * - 선택상태, 진행도, 완성 줄 모두 초기화
    * - level에 따라 그리드 크기 결정 (level+2)
    * - 3×3은 PRACTICE_KEYWORDS, 4×4~7×7은 CLIMATE_KEYWORDS 사용
    * 
    * 중요: 모둠 빙고는 여러 사람이 함께 하므로 같은 레벨에서는
-   *       모든 플레이어가 동일한 단어 배열을 가져야 합니다.
+   *       같은 단어 세트를 공유하지만, 배열은 각자 달라야 합니다.
    */
   const initGroupMode = () => {
-    // 레벨별 고정 시드 사용 (같은 레벨 = 같은 단어)
-    const seed = `group-level-${level}`;
+    // 세션별 랜덤 시드 (배열 순서 다르게)
+    const seed = generateNewSeed();
     setGroupSeed(seed);
     const size = (level + 2) as GridSize;
     const sourceArray = size === 3 ? PRACTICE_KEYWORDS : CLIMATE_KEYWORDS;
-    const board = initBoard(size, seed, sourceArray);
+    const board = initGroupBoard(size, sourceArray, seed);
     setGroupBoard(board);
     setGroupSelected(new Set());
     setHasBingo(false);
@@ -350,11 +373,29 @@ export default function BingoGame() {
     setResultModalOpen(false);
   };
 
-  // 모둠 모드: 타일 클릭 핸들러
+  // 모둠 모드: 타일 클릭 핸들러 (체크 토글 기능 포함)
   const handleGroupTileClick = (index: number, data: KeywordData) => {
-    if (groupSelected.has(index) || allLevelsComplete) return;
+    if (allLevelsComplete) return;
     
     const newSelected = new Set(groupSelected);
+    
+    // 이미 선택된 타일 클릭 시 선택 해제 (체크 취소)
+    if (groupSelected.has(index)) {
+      // 빙고 완성 후에는 취소 불가
+      if (hasBingo) {
+        return;
+      }
+      newSelected.delete(index);
+      setGroupSelected(newSelected);
+      
+      // 줄 수 재계산
+      const completedLines = getCompletedLines(newSelected, (level + 2) as GridSize);
+      setCompletedLinesCount(completedLines.length);
+      setWinningLines(completedLines);
+      return;
+    }
+    
+    // 새로 선택
     newSelected.add(index);
     setGroupSelected(newSelected);
     
@@ -834,7 +875,6 @@ function GroupModeUI({
               <button
                 key={index}
                 onClick={() => onTileClick(index, data)}
-                disabled={isSelected}
                 data-testid={`tile-${index}`}
                 className={`
                   relative aspect-square rounded-xl sm:rounded-2xl p-1.5 sm:p-2 md:p-3
@@ -847,7 +887,7 @@ function GroupModeUI({
                       : 'bg-primary text-primary-foreground border-primary shadow-md'
                     : 'bg-card text-card-foreground border-card-border hover-elevate active-elevate-2 hover:scale-110 hover:shadow-lg cursor-pointer'
                   }
-                  ${isSelected ? 'cursor-default' : ''}
+                  cursor-pointer
                 `}
               >
                 <span className="relative z-10">

@@ -302,13 +302,17 @@ export default function BingoGame() {
    * 모둠 모드 초기화 (resetGame for Group Mode)
    * 
    * 초기화 절차:
-   * - 새 시드 생성하여 보드 재생성
+   * - 레벨별 고정 시드 사용 (모든 플레이어가 같은 단어 공유)
    * - 선택상태, 진행도, 완성 줄 모두 초기화
    * - level에 따라 그리드 크기 결정 (level+2)
    * - 3×3은 PRACTICE_KEYWORDS, 4×4~7×7은 CLIMATE_KEYWORDS 사용
+   * 
+   * 중요: 모둠 빙고는 여러 사람이 함께 하므로 같은 레벨에서는
+   *       모든 플레이어가 동일한 단어 배열을 가져야 합니다.
    */
   const initGroupMode = () => {
-    const seed = generateNewSeed();
+    // 레벨별 고정 시드 사용 (같은 레벨 = 같은 단어)
+    const seed = `group-level-${level}`;
     setGroupSeed(seed);
     const size = (level + 2) as GridSize;
     const sourceArray = size === 3 ? PRACTICE_KEYWORDS : CLIMATE_KEYWORDS;

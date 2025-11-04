@@ -280,12 +280,15 @@ export default function BingoGame() {
   const [resultModalOpen, setResultModalOpen] = useState(false);
 
   /**
-   * 초기화 Effect: gameMode 또는 gridSize 변경 시 실행 (onSizeChange)
+   * 초기화 Effect: gameMode, gridSize, 또는 level 변경 시 실행 (onSizeChange)
    * 
    * size 변경 시 초기화 절차:
    * 1. 보드/선택상태/진행도/완성 줄 집합 완전 초기화
    * 2. 새로운 시드로 보드 재생성
    * 3. UI 즉시 갱신 (grid-template-columns도 자동 반영)
+   * 
+   * level 변경 시 (Group 모드):
+   * - level이 변경되면 그리드 크기도 변경되므로 보드 재생성 필요
    */
   useEffect(() => {
     if (gameMode === 'group') {
@@ -293,7 +296,7 @@ export default function BingoGame() {
     } else {
       initSoloMode();
     }
-  }, [gameMode, gridSize]);
+  }, [gameMode, gridSize, level]);
 
   /**
    * 모둠 모드 초기화 (resetGame for Group Mode)
@@ -437,14 +440,23 @@ export default function BingoGame() {
     setHasBingo(false);
   };
 
-  // 리셋
+  /**
+   * 리셋 핸들러 (resetGame)
+   * 
+   * Group 모드:
+   * - level을 1로 재설정 (useEffect가 initGroupMode 자동 호출)
+   * - 완료 상태 초기화
+   * 
+   * Solo 모드:
+   * - 직접 initSoloMode 호출하여 모든 상태 초기화
+   */
   const handleReset = () => {
     if (confirm('처음부터 다시 시작하시겠습니까?')) {
       if (gameMode === 'group') {
         setLevel(1);
         setAllLevelsComplete(false);
         setLevelCompleteModalOpen(false);
-        initGroupMode();
+        // level 변경 시 useEffect가 initGroupMode 자동 호출
       } else {
         initSoloMode();
       }
@@ -599,7 +611,7 @@ export default function BingoGame() {
 
         <footer className="text-center mt-6 sm:mt-8">
           <p className="text-base sm:text-lg md:text-xl font-medium text-primary">
-            지구를 지키는 작은 실천을 시작해요 🌱
+            지구를 지키는 작은 실천을 시작해요
           </p>
         </footer>
       </div>

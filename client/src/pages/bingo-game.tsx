@@ -489,7 +489,7 @@ export default function BingoGame() {
       { title: '초급 달성!', message: '훌륭합니다! 기후 지식이 자라나고 있어요.' },
       { title: '중급 달성!', message: '대단해요! 이제 진정한 기후 지킴이의 모습이 보입니다.' },
       { title: '상급 달성!', message: '놀라워요! 거의 전문가 수준이에요. 마지막 도전만 남았습니다!' },
-      { title: '지구 지킴이 등단!', message: '축하합니다! 모든 단계를 완료하셨습니다. 당신은 이제 진정한 지구 지킴이입니다!' }
+      { title: '환경지킴이 인증', message: '축하합니다! 모든 단계를 완료하셨습니다. 당신은 이제 진정한 환경지킴이입니다!' }
     ];
     return messages[lv - 1] || messages[0];
   };

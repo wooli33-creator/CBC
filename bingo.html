@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기후 위기 빙고 챌린지</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gamja+Flower&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Jua', sans-serif;
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Gamja Flower', cursive;
+            font-size: 2.5rem;
+            text-align: center;
+            color: #006064;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #00838f;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .tab-button {
+            padding: 12px 30px;
+            border: 2px solid #00838f;
+            background: white;
+            color: #00838f;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Jua', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .tab-button:hover {
+            background: #e0f7fa;
+            transform: scale(1.05);
+        }
+
+        .tab-button.active {
+            background: #00838f;
+            color: white;
+        }
+
+        .level-info {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .level-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .level-badge {
+            background: #4caf50;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .progress-badge {
+            background: #ff9800;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .level-indicators {
+            display: flex;
+            gap: 5px;
+        }
+
+        .level-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-center;
+            font-weight: bold;
+            border: 2px solid;
+        }
+
+        .level-indicator.complete {
+            background: #00838f;
+            color: white;
+            border-color: #00838f;
+        }
+
+        .level-indicator.current {
+            background: #ffa726;
+            color: white;
+            border-color: #ffa726;
+            animation: pulse 2s infinite;
+        }
+
+        .level-indicator.pending {
+            background: #f5f5f5;
+            color: #9e9e9e;
+            border-color: #e0e0e0;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .victory-banner {
+            background: linear-gradient(90deg, #00838f 0%, #ffa726 50%, #00838f 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+        }
+
+        .victory-banner h2 {
+            color: white;
+            text-align: center;
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .grid-container {
+            background: rgba(255,255,255,0.9);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+        }
+
+        .bingo-grid {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .grid-size-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-size-4 { grid-template-columns: repeat(4, 1fr); }
+        .grid-size-5 { grid-template-columns: repeat(5, 1fr); }
+        .grid-size-6 { grid-template-columns: repeat(6, 1fr); }
+        .grid-size-7 { grid-template-columns: repeat(7, 1fr); }
+
+        .tile {
+            aspect-ratio: 1;
+            border: 3px solid #b0bec5;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-center;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 10px;
+            position: relative;
+        }
+
+        .tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background: #e0f7fa;
+        }
+
+        .tile.selected {
+            background: #00838f;
+            color: white;
+            border-color: #00838f;
+        }
+
+        .tile.winning {
+            background: linear-gradient(135deg, #00838f 0%, #ffa726 50%, #00838f 100%);
+            color: white;
+            border-color: #ffa726;
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .checkmark {
+            position: absolute;
+            font-size: 2rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-family: 'Jua', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.25);
+        }
+
+        .btn-primary {
+            background: #00838f;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #757575;
+            background: none;
+            border: none;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #000;
+        }
+
+        .modal-title {
+            color: #4caf50;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            padding-right: 30px;
+        }
+
+        .modal-description {
+            color: #424242;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .solo-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .grid-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .grid-option {
+            padding: 10px 20px;
+            border: 2px solid #00838f;
+            background: white;
+            color: #00838f;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Jua', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .grid-option:hover {
+            background: #e0f7fa;
+        }
+
+        .grid-option.active {
+            background: #00838f;
+            color: white;
+        }
+
+        .turn-info {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #006064;
+            margin-bottom: 15px;
+        }
+
+        .boards-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .board-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .board-title {
+            text-align: center;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #006064;
+        }
+
+        .player-board .board-title {
+            color: #00838f;
+        }
+
+        .computer-board .board-title {
+            color: #d32f2f;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .tab-button {
+                width: 200px;
+            }
+
+            .boards-container {
+                grid-template-columns: 1fr;
+            }
+
+            .tile {
+                font-size: 0.85rem;
+                padding: 5px;
+            }
+
+            .level-indicator {
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
+
+            .modal-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .bingo-grid {
+                gap: 5px;
+            }
+
+            .tile {
+                font-size: 0.7rem;
+                border-width: 2px;
+                border-radius: 10px;
+            }
+
+            .checkmark {
+                font-size: 1.2rem;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>기후 위기 빙고 챌린지</h1>
+        <p class="subtitle">3×3부터 7×7까지 모든 빙고를 완성하며 자구 지킴이가 되어보세요!</p>
+
+        <div class="tabs">
+            <button class="tab-button active" data-mode="group">모둠 모드</button>
+            <button class="tab-button" data-mode="solo">혼자하기</button>
+        </div>
+
+        <!-- 모둠 모드 -->
+        <div id="group-mode">
+            <div class="level-info">
+                <div class="level-header">
+                    <div>
+                        <span class="level-badge" id="group-level-badge">연습 단계</span>
+                        <span class="subtitle" style="margin: 0 0 0 10px;">연습 단계로 시작합니다</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span class="progress-badge" id="group-progress">진행도: 0 / 3</span>
+                    </div>
+                </div>
+                <div class="level-indicators" id="group-level-indicators" style="margin-top: 15px; justify-content: center;">
+                    <!-- 레벨 인디케이터 -->
+                </div>
+            </div>
+
+            <div id="group-victory" class="victory-banner hidden">
+                <h2>빙고 완성!</h2>
+            </div>
+
+            <div class="grid-container">
+                <div class="bingo-grid grid-size-3" id="group-grid">
+                    <!-- 타일들이 여기에 생성됩니다 -->
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="group-reset">처음부터 다시 시작</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 혼자하기 모드 -->
+        <div id="solo-mode" class="hidden">
+            <div class="solo-controls">
+                <p style="text-align: center; margin-bottom: 15px; font-size: 1.1rem; color: #006064;">그리드 크기 선택:</p>
+                <div class="grid-selector">
+                    <button class="grid-option" data-size="3">3×3</button>
+                    <button class="grid-option" data-size="4">4×4</button>
+                    <button class="grid-option active" data-size="5">5×5</button>
+                    <button class="grid-option" data-size="6">6×6</button>
+                    <button class="grid-option" data-size="7">7×7</button>
+                </div>
+                <div class="turn-info" id="solo-turn">게임 시작 전</div>
+                <div class="button-group">
+                    <button class="btn btn-success" id="solo-draw">단어 추첨</button>
+                    <button class="btn btn-secondary" id="solo-reset">새 게임</button>
+                </div>
+            </div>
+
+            <div class="boards-container">
+                <div class="board-section player-board">
+                    <h3 class="board-title">플레이어 보드</h3>
+                    <div class="bingo-grid grid-size-5" id="player-grid">
+                        <!-- 플레이어 타일 -->
+                    </div>
+                    <p style="text-align: center; margin-top: 10px; font-weight: bold; color: #00838f;" id="player-progress">줄: 0 / 3</p>
+                </div>
+
+                <div class="board-section computer-board">
+                    <h3 class="board-title">컴퓨터 보드</h3>
+                    <div class="bingo-grid grid-size-5" id="computer-grid">
+                        <!-- 컴퓨터 타일 -->
+                    </div>
+                    <p style="text-align: center; margin-top: 10px; font-weight: bold; color: #d32f2f;" id="computer-progress">줄: 0 / 3</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 키워드 모달 -->
+    <div class="modal" id="keyword-modal">
+        <div class="modal-content">
+            <button class="modal-close" id="keyword-modal-close">×</button>
+            <h2 class="modal-title" id="keyword-title">키워드</h2>
+            <p class="modal-description" id="keyword-description">설명</p>
+            <div class="button-group" style="margin-top: 20px;">
+                <button class="btn btn-primary" id="keyword-ok">알겠어요!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 레벨업/결과 모달 -->
+    <div class="modal" id="result-modal">
+        <div class="modal-content">
+            <button class="modal-close" id="result-modal-close">×</button>
+            <h2 class="modal-title" id="result-title">결과</h2>
+            <p class="modal-description" id="result-description">내용</p>
+            <div class="button-group" style="margin-top: 20px;">
+                <button class="btn btn-success" id="result-ok">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 데이터 정의
+        // ============================================================
+        
+        const REQUIRED_LINES = 3;
+
+        const PRACTICE_KEYWORDS = [
+            { keyword: '손수건 사용', description: '화장지 대신 손수건을 사용하면 나무를 보호하고 쓰레기를 줄일 수 있어요.' },
+            { keyword: '걷기운동', description: '짧은 거리는 차 대신 걸어서 이동하면 건강도 지키고 탄소 배출도 줄일 수 있어요.' },
+            { keyword: '중고 거래', description: '필요 없는 물건을 나누고, 중고 제품을 활용하면 자원 낭비를 막을 수 있습니다.' },
+            { keyword: '도담도담 정원', description: '작은 텃밭이나 정원을 가꾸며 자연과 함께 하는 실천입니다. 직접 키운 채소를 먹으면 탄소 발자국을 줄일 수 있어요.' },
+            { keyword: '기후미식', description: '지역에서 생산된 제철 식재료를 활용한 요리로, 운송 과정의 탄소 배출을 최소화하는 식문화입니다.' },
+            { keyword: '물병 챙기기', description: '개인 물병을 항상 가지고 다니면 일회용 플라스틱 컵 사용을 줄일 수 있습니다.' },
+            { keyword: '장바구니', description: '마트나 시장 갈 때 장바구니를 챙기면 비닐봉지 사용을 줄일 수 있어요.' },
+            { keyword: '절전 습관', description: '사용하지 않는 전기 제품의 플러그를 뽑고, 불필요한 조명을 끄는 습관입니다.' },
+            { keyword: '계단 이용', description: '엘리베이터 대신 계단을 이용하면 전기도 아끼고 건강도 챙길 수 있어요.' }
+        ];
+
+        const CLIMATE_KEYWORDS = [
+            { keyword: '탄소중립', description: '온실가스 배출량을 최대한 줄이고, 남은 배출량은 흡수하여 실질적인 배출량을 0으로 만드는 것입니다.' },
+            { keyword: '재활용', description: '사용한 물건을 다시 활용하여 쓰레기를 줄이고 자원을 아끼는 방법입니다.' },
+            { keyword: '태양에너지', description: '태양의 빛과 열을 이용해 전기를 만드는 깨끗한 에너지입니다. 화석연료와 달리 오염물질이 나오지 않습니다.' },
+            { keyword: '미세먼지', description: '대기 중에 떠다니는 아주 작은 먼지로, 건강에 해롭고 기후 변화에도 영향을 줍니다.' },
+            { keyword: '해수면 상승', description: '지구 온난화로 빙하가 녹으면서 바다의 높이가 점점 높아지는 현상입니다.' },
+            { keyword: '식물성 식단', description: '고기 대신 채소, 과일, 곡물 위주로 먹는 식습관으로 온실가스 배출을 크게 줄일 수 있습니다.' },
+            { keyword: '온실가스', description: '이산화탄소 같은 가스들이 지구를 따뜻하게 만들어 기후 변화를 일으킵니다.' },
+            { keyword: '전기차', description: '석유 대신 전기로 움직이는 자동차입니다. 배기가스가 없어서 공기를 깨끗하게 합니다.' },
+            { keyword: '분리수거', description: '종이, 플라스틱, 유리 등을 따로 모아서 재활용할 수 있게 하는 것입니다.' },
+            { keyword: '일회용품 줄이기', description: '한 번만 쓰고 버리는 물건 사용을 줄이면 쓰레기와 자원 낭비를 막을 수 있습니다.' },
+            { keyword: '지구온난화', description: '지구의 평균 기온이 점점 높아지는 현상으로, 많은 환경 문제를 일으킵니다.' },
+            { keyword: '풍력발전', description: '바람의 힘으로 터빈을 돌려 전기를 만드는 친환경 발전 방식입니다.' },
+            { keyword: '생물다양성', description: '다양한 생물들이 함께 사는 것으로, 기후 변화로 많은 생물이 사라지고 있습니다.' },
+            { keyword: '플라스틱 오염', description: '플라스틱은 자연에서 잘 분해되지 않아 환경을 오염시킵니다. 바다 생물들에게 특히 위험합니다.' },
+            { keyword: '에너지 절약', description: '필요없는 전기를 끄고, 에너지 효율이 높은 제품을 사용하는 등 에너지를 아끼는 행동입니다.' },
+            { keyword: '숲 보호', description: '나무들은 이산화탄소를 흡수해서 공기를 깨끗하게 만듭니다. 숲을 지키는 것이 중요합니다.' },
+            { keyword: '대중교통', description: '버스, 지하철 같은 교통수단을 이용하면 자동차보다 환경 오염이 적습니다.' },
+            { keyword: '물 절약', description: '물은 소중한 자원입니다. 양치할 때 컵을 사용하고, 샤워 시간을 줄이는 것이 좋습니다.' },
+            { keyword: '친환경 제품', description: '만들 때부터 환경을 생각해서 만든 제품들입니다. 재활용 소재를 사용하기도 합니다.' },
+            { keyword: '재생에너지', description: '태양광, 풍력, 수력 등 고갈되지 않고 재생 가능한 에너지원입니다.' },
+            { keyword: '생태계', description: '생물들과 환경이 서로 영향을 주고받으며 살아가는 시스템입니다. 균형이 중요합니다.' },
+            { keyword: '기후행동', description: '기후 위기를 막기 위해 우리가 할 수 있는 모든 실천 활동을 말합니다.' },
+            { keyword: '지속가능성', description: '미래 세대도 좋은 환경에서 살 수 있도록 자원을 아껴 쓰는 것을 말합니다.' },
+            { keyword: '순환경제', description: '자원을 재사용하고 재활용하여 폐기물을 최소화하는 경제 시스템입니다.' },
+            { keyword: '그린리모델링', description: '건물을 에너지 효율적으로 개조하여 탄소 배출을 줄이는 것입니다.' },
+            { keyword: '기후난민', description: '기후 변화로 인한 자연재해나 환경 악화로 고향을 떠나야 하는 사람들입니다.' },
+            { keyword: '에너지 효율', description: '같은 에너지로 더 많은 일을 하거나, 적은 에너지로 같은 효과를 내는 것입니다.' },
+            { keyword: '도시열섬', description: '도시 지역이 주변보다 온도가 높아지는 현상으로, 기후 변화를 가속화합니다.' },
+            { keyword: '습지 보호', description: '습지는 탄소를 저장하고 생물다양성을 지키는 중요한 생태계입니다.' },
+            { keyword: '산불 예방', description: '기후 변화로 산불이 증가하고 있습니다. 예방과 대응이 중요합니다.' },
+            { keyword: '해양 쓰레기', description: '바다로 흘러들어간 플라스틱 등의 쓰레기가 해양 생태계를 파괴합니다.' },
+            { keyword: '업사이클링', description: '버려지는 물건을 새롭고 가치 있는 제품으로 재탄생시키는 것입니다.' },
+            { keyword: '탄소 발자국', description: '개인이나 조직이 활동하면서 배출하는 온실가스의 총량을 의미합니다.' },
+            { keyword: '녹색 건축', description: '환경 친화적인 재료와 기술을 사용해 지속가능한 건물을 짓는 것입니다.' },
+            { keyword: '제로 웨이스트', description: '쓰레기를 최소화하고 자원을 순환시키는 생활 방식입니다.' },
+            { keyword: '로컬 푸드', description: '지역에서 생산된 식품을 소비하면 운송 거리가 줄어 탄소 배출이 감소합니다.' },
+            { keyword: '기후 소송', description: '정부나 기업의 기후 대응 부족에 대해 법적 책임을 묻는 소송입니다.' },
+            { keyword: '탄소 포집', description: '대기 중의 이산화탄소를 포집하여 저장하거나 활용하는 기술입니다.' },
+            { keyword: '생태 복원', description: '훼손된 자연 생태계를 원래 상태로 되돌리는 작업입니다.' },
+            { keyword: '기후 정의', description: '기후 위기의 영향을 공정하게 분담하고, 취약 계층을 보호하는 것입니다.' },
+            { keyword: '녹색 전환', description: '화석연료 중심 경제에서 친환경 경제로 전환하는 과정입니다.' },
+            { keyword: '환경 교육', description: '환경 문제를 이해하고 실천할 수 있도록 교육하는 것입니다.' },
+            { keyword: '스마트 그리드', description: '전력 수요와 공급을 효율적으로 관리하는 지능형 전력망입니다.' },
+            { keyword: '바이오 에너지', description: '식물이나 유기물을 에너지원으로 활용하는 재생 가능 에너지입니다.' },
+            { keyword: '탄소 세', description: '탄소 배출에 세금을 부과하여 배출량을 줄이도록 유도하는 정책입니다.' },
+            { keyword: '기후 적응', description: '기후 변화의 영향에 대비하고 적응하는 전략입니다.' },
+            { keyword: '친환경 교통', description: '자전거, 전기차, 대중교통 등 환경에 미치는 영향이 적은 교통수단입니다.' },
+            { keyword: '녹색 일자리', description: '환경 보호와 지속가능성에 기여하는 직업들입니다.' },
+            { keyword: '기후 협약', description: '파리협정 등 국제사회가 기후 위기 대응을 위해 맺은 약속입니다.' }
+        ];
+
+        // ============================================================
+        // 유틸리티 함수
+        // ============================================================
+
+        function seededRandom(seed) {
+            let value = 0;
+            for (let i = 0; i < seed.length; i++) {
+                value = (value + seed.charCodeAt(i) * (i + 1)) % 2147483647;
+            }
+            
+            return function() {
+                value = (value * 16807) % 2147483647;
+                return (value - 1) / 2147483646;
+            };
+        }
+
+        function seededShuffle(array, seed) {
+            const shuffled = [...array];
+            const rng = seededRandom(seed);
+            
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            
+            return shuffled;
+        }
+
+        function generateSeed() {
+            return `${Math.random()}-${Date.now()}`;
+        }
+
+        function getCompletedLines(selected, size) {
+            const lines = [];
+            
+            // 가로 줄
+            for (let row = 0; row < size; row++) {
+                const lineIndices = [];
+                for (let col = 0; col < size; col++) {
+                    lineIndices.push(row * size + col);
+                }
+                if (lineIndices.every(i => selected.has(i))) {
+                    lines.push(lineIndices);
+                }
+            }
+            
+            // 세로 줄
+            for (let col = 0; col < size; col++) {
+                const lineIndices = [];
+                for (let row = 0; row < size; row++) {
+                    lineIndices.push(row * size + col);
+                }
+                if (lineIndices.every(i => selected.has(i))) {
+                    lines.push(lineIndices);
+                }
+            }
+            
+            // 대각선 (↘)
+            const diag1 = [];
+            for (let i = 0; i < size; i++) {
+                diag1.push(i * size + i);
+            }
+            if (diag1.every(i => selected.has(i))) {
+                lines.push(diag1);
+            }
+            
+            // 대각선 (↙)
+            const diag2 = [];
+            for (let i = 0; i < size; i++) {
+                diag2.push(i * size + (size - 1 - i));
+            }
+            if (diag2.every(i => selected.has(i))) {
+                lines.push(diag2);
+            }
+            
+            return lines;
+        }
+
+        // ============================================================
+        // 모둠 모드
+        // ============================================================
+
+        const groupState = {
+            level: 1,
+            board: [],
+            selected: new Set(),
+            hasBingo: false,
+            winningLines: [],
+            allComplete: false
+        };
+
+        function initGroupMode() {
+            const size = groupState.level + 2;
+            const seed = generateSeed();
+            const sourceArray = size === 3 ? PRACTICE_KEYWORDS : CLIMATE_KEYWORDS;
+            const totalCells = size * size;
+            
+            // 레벨별 고정 단어 세트, 랜덤 배열
+            const fixedWordSet = sourceArray.slice(0, totalCells);
+            groupState.board = seededShuffle(fixedWordSet, seed);
+            groupState.selected = new Set();
+            groupState.hasBingo = false;
+            groupState.winningLines = [];
+            
+            renderGroupBoard();
+            updateGroupUI();
+        }
+
+        function renderGroupBoard() {
+            const size = groupState.level + 2;
+            const grid = document.getElementById('group-grid');
+            grid.className = `bingo-grid grid-size-${size}`;
+            grid.innerHTML = '';
+            
+            groupState.board.forEach((data, index) => {
+                const tile = document.createElement('button');
+                tile.className = 'tile';
+                tile.textContent = data.keyword;
+                
+                if (groupState.selected.has(index)) {
+                    tile.classList.add('selected');
+                    const isWinning = groupState.winningLines.some(line => line.includes(index));
+                    if (isWinning) {
+                        tile.classList.add('winning');
+                    }
+                    tile.innerHTML += '<div class="checkmark">✓</div>';
+                }
+                
+                tile.addEventListener('click', () => handleGroupTileClick(index, data));
+                grid.appendChild(tile);
+            });
+        }
+
+        function handleGroupTileClick(index, data) {
+            if (groupState.allComplete) return;
+            
+            // 토글 기능
+            if (groupState.selected.has(index)) {
+                if (groupState.hasBingo) return; // 빙고 완성 후 취소 불가
+                groupState.selected.delete(index);
+                updateGroupProgress();
+                renderGroupBoard();
+                return;
+            }
+            
+            // 선택
+            groupState.selected.add(index);
+            showKeywordModal(data);
+            updateGroupProgress();
+            renderGroupBoard();
+            
+            const size = groupState.level + 2;
+            const completedLines = getCompletedLines(groupState.selected, size);
+            
+            if (completedLines.length >= REQUIRED_LINES && !groupState.hasBingo) {
+                groupState.hasBingo = true;
+                groupState.winningLines = completedLines;
+                renderGroupBoard();
+                updateGroupUI();
+                
+                setTimeout(() => {
+                    if (groupState.level < 5) {
+                        showLevelUpModal();
+                    } else {
+                        showFinalModal();
+                    }
+                }, 500);
+            }
+        }
+
+        function updateGroupProgress() {
+            const size = groupState.level + 2;
+            const completedLines = getCompletedLines(groupState.selected, size);
+            groupState.winningLines = completedLines;
+            
+            document.getElementById('group-progress').textContent = 
+                `진행도: ${completedLines.length} / ${REQUIRED_LINES}`;
+        }
+
+        function updateGroupUI() {
+            const levelNames = ['연습 단계', '레벨 1', '레벨 2', '레벨 3', '레벨 4', '레벨 5'];
+            const gridSizes = ['3×3 그리드', '4×4 그리드', '5×5 그리드', '6×6 그리드', '7×7 그리드'];
+            
+            document.getElementById('group-level-badge').textContent = levelNames[groupState.level - 1];
+            
+            // 레벨 인디케이터
+            const indicators = document.getElementById('group-level-indicators');
+            indicators.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                const indicator = document.createElement('div');
+                indicator.className = 'level-indicator';
+                
+                if (i < groupState.level) {
+                    indicator.classList.add('complete');
+                    indicator.textContent = '✓';
+                } else if (i === groupState.level) {
+                    indicator.classList.add('current');
+                    indicator.textContent = i;
+                } else {
+                    indicator.classList.add('pending');
+                    indicator.textContent = i;
+                }
+                
+                indicators.appendChild(indicator);
+            }
+            
+            // 빙고 배너
+            document.getElementById('group-victory').classList.toggle('hidden', !groupState.hasBingo);
+        }
+
+        function showLevelUpModal() {
+            const levelNames = ['', '초급 도전자', '중급 도전자', '상급 도전자', '환경 전문가'];
+            const nextLevel = groupState.level + 1;
+            
+            document.getElementById('result-title').textContent = '레벨 클리어!';
+            document.getElementById('result-description').textContent = 
+                `축하합니다! ${levelNames[groupState.level]} 칭호를 획득했습니다!\n다음 단계로 진행하시겠어요?`;
+            
+            document.getElementById('result-modal').classList.add('show');
+            
+            document.getElementById('result-ok').onclick = () => {
+                document.getElementById('result-modal').classList.remove('show');
+                groupState.level = nextLevel;
+                initGroupMode();
+            };
+        }
+
+        function showFinalModal() {
+            document.getElementById('result-title').textContent = '환경지킴이 인증!';
+            document.getElementById('result-description').textContent = 
+                '🎉 모든 레벨을 완료하셨습니다! 🎉\n당신은 이제 진정한 기후 위기 대응 전문가입니다!';
+            
+            groupState.allComplete = true;
+            document.getElementById('result-modal').classList.add('show');
+            
+            document.getElementById('result-ok').onclick = () => {
+                document.getElementById('result-modal').classList.remove('show');
+            };
+        }
+
+        // ============================================================
+        // 혼자하기 모드
+        // ============================================================
+
+        const soloState = {
+            size: 5,
+            playerBoard: [],
+            computerBoard: [],
+            playerSelected: new Set(),
+            computerSelected: new Set(),
+            currentWord: null,
+            gameStarted: false,
+            gameOver: false
+        };
+
+        function initSoloMode() {
+            const size = soloState.size;
+            const totalCells = size * size;
+            const sourceArray = size === 3 ? PRACTICE_KEYWORDS : CLIMATE_KEYWORDS;
+            
+            // 각 보드마다 다른 배열
+            soloState.playerBoard = seededShuffle(sourceArray, generateSeed()).slice(0, totalCells);
+            soloState.computerBoard = seededShuffle(sourceArray, generateSeed()).slice(0, totalCells);
+            soloState.playerSelected = new Set();
+            soloState.computerSelected = new Set();
+            soloState.gameStarted = true;
+            soloState.gameOver = false;
+            
+            renderSoloBoards();
+            updateSoloUI();
+        }
+
+        function renderSoloBoards() {
+            const playerGrid = document.getElementById('player-grid');
+            const computerGrid = document.getElementById('computer-grid');
+            
+            playerGrid.className = `bingo-grid grid-size-${soloState.size}`;
+            computerGrid.className = `bingo-grid grid-size-${soloState.size}`;
+            
+            playerGrid.innerHTML = '';
+            computerGrid.innerHTML = '';
+            
+            // 플레이어 보드
+            soloState.playerBoard.forEach((data, index) => {
+                const tile = document.createElement('button');
+                tile.className = 'tile';
+                tile.textContent = data.keyword;
+                
+                if (soloState.playerSelected.has(index)) {
+                    tile.classList.add('selected');
+                    tile.innerHTML += '<div class="checkmark">✓</div>';
+                }
+                
+                tile.addEventListener('click', () => showKeywordModal(data));
+                playerGrid.appendChild(tile);
+            });
+            
+            // 컴퓨터 보드
+            soloState.computerBoard.forEach((data, index) => {
+                const tile = document.createElement('button');
+                tile.className = 'tile';
+                tile.textContent = data.keyword;
+                
+                if (soloState.computerSelected.has(index)) {
+                    tile.classList.add('selected');
+                    tile.innerHTML += '<div class="checkmark">✓</div>';
+                }
+                
+                tile.addEventListener('click', () => showKeywordModal(data));
+                computerGrid.appendChild(tile);
+            });
+        }
+
+        function drawWord() {
+            if (!soloState.gameStarted || soloState.gameOver) {
+                alert('먼저 새 게임을 시작하세요!');
+                return;
+            }
+            
+            const size = soloState.size;
+            const sourceArray = size === 3 ? PRACTICE_KEYWORDS : CLIMATE_KEYWORDS;
+            const randomIndex = Math.floor(Math.random() * sourceArray.length);
+            soloState.currentWord = sourceArray[randomIndex].keyword;
+            
+            // 플레이어 보드 체크
+            soloState.playerBoard.forEach((data, index) => {
+                if (data.keyword === soloState.currentWord && !soloState.playerSelected.has(index)) {
+                    soloState.playerSelected.add(index);
+                }
+            });
+            
+            // 컴퓨터 보드 체크
+            soloState.computerBoard.forEach((data, index) => {
+                if (data.keyword === soloState.currentWord && !soloState.computerSelected.has(index)) {
+                    soloState.computerSelected.add(index);
+                }
+            });
+            
+            renderSoloBoards();
+            updateSoloUI();
+            checkSoloWinner();
+        }
+
+        function checkSoloWinner() {
+            const playerLines = getCompletedLines(soloState.playerSelected, soloState.size);
+            const computerLines = getCompletedLines(soloState.computerSelected, soloState.size);
+            
+            if (playerLines.length >= REQUIRED_LINES && computerLines.length >= REQUIRED_LINES) {
+                soloState.gameOver = true;
+                showGameResult('무승부! 동시에 빙고를 완성했습니다!');
+            } else if (playerLines.length >= REQUIRED_LINES) {
+                soloState.gameOver = true;
+                showGameResult('승리! 플레이어가 이겼습니다! 🎉');
+            } else if (computerLines.length >= REQUIRED_LINES) {
+                soloState.gameOver = true;
+                showGameResult('패배! 컴퓨터가 이겼습니다. 다시 도전해보세요!');
+            }
+        }
+
+        function showGameResult(message) {
+            document.getElementById('result-title').textContent = '게임 종료';
+            document.getElementById('result-description').textContent = message;
+            document.getElementById('result-modal').classList.add('show');
+            
+            document.getElementById('result-ok').onclick = () => {
+                document.getElementById('result-modal').classList.remove('show');
+            };
+        }
+
+        function updateSoloUI() {
+            const playerLines = getCompletedLines(soloState.playerSelected, soloState.size);
+            const computerLines = getCompletedLines(soloState.computerSelected, soloState.size);
+            
+            document.getElementById('player-progress').textContent = `줄: ${playerLines.length} / ${REQUIRED_LINES}`;
+            document.getElementById('computer-progress').textContent = `줄: ${computerLines.length} / ${REQUIRED_LINES}`;
+            
+            if (soloState.currentWord) {
+                document.getElementById('solo-turn').textContent = `추첨 단어: ${soloState.currentWord}`;
+            } else if (soloState.gameStarted) {
+                document.getElementById('solo-turn').textContent = '단어 추첨 버튼을 누르세요';
+            } else {
+                document.getElementById('solo-turn').textContent = '게임 시작 전';
+            }
+        }
+
+        // ============================================================
+        // 모달
+        // ============================================================
+
+        function showKeywordModal(data) {
+            document.getElementById('keyword-title').textContent = data.keyword;
+            document.getElementById('keyword-description').textContent = data.description;
+            document.getElementById('keyword-modal').classList.add('show');
+        }
+
+        function hideKeywordModal() {
+            document.getElementById('keyword-modal').classList.remove('show');
+        }
+
+        // ============================================================
+        // 이벤트 리스너
+        // ============================================================
+
+        // 탭 전환
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const mode = button.dataset.mode;
+                
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                
+                if (mode === 'group') {
+                    document.getElementById('group-mode').classList.remove('hidden');
+                    document.getElementById('solo-mode').classList.add('hidden');
+                } else {
+                    document.getElementById('group-mode').classList.add('hidden');
+                    document.getElementById('solo-mode').classList.remove('hidden');
+                }
+            });
+        });
+
+        // 모둠 모드 리셋
+        document.getElementById('group-reset').addEventListener('click', () => {
+            groupState.level = 1;
+            groupState.allComplete = false;
+            initGroupMode();
+        });
+
+        // 혼자하기 그리드 선택
+        document.querySelectorAll('.grid-option').forEach(button => {
+            button.addEventListener('click', () => {
+                const size = parseInt(button.dataset.size);
+                soloState.size = size;
+                soloState.gameStarted = false;
+                
+                document.querySelectorAll('.grid-option').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                
+                document.getElementById('solo-turn').textContent = '새 게임 버튼을 눌러 시작하세요';
+            });
+        });
+
+        // 혼자하기 버튼
+        document.getElementById('solo-draw').addEventListener('click', drawWord);
+        document.getElementById('solo-reset').addEventListener('click', initSoloMode);
+
+        // 모달 닫기
+        document.getElementById('keyword-modal-close').addEventListener('click', hideKeywordModal);
+        document.getElementById('keyword-ok').addEventListener('click', hideKeywordModal);
+        document.getElementById('result-modal-close').addEventListener('click', () => {
+            document.getElementById('result-modal').classList.remove('show');
+        });
+
+        // 모달 외부 클릭 시 닫기
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
+        });
+
+        // ============================================================
+        // 초기화
+        // ============================================================
+
+        initGroupMode();
+    </script>
+</body>
+</html>
